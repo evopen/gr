@@ -1,0 +1,12 @@
+# Visual Studio
+out/
+.vs/
+
+# Code Analysis Reports
+clang_tidy.txt
+cppcheck.xml
+gtest.xml
+gcov.xml
+
+# Visual Studio Test Reports
+TestResults/
