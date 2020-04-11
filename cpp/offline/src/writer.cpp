@@ -125,6 +125,7 @@ void MovieWriter::addFrame(const string& filename)
 
 void MovieWriter::addFrame(const uint8_t* pixels)
 {
+    int channels = 3;
 	// The AVFrame data will be stored as RGBRGBRGB... row-wise,
 	// from left to right and from top to bottom.
 	for (unsigned int y = 0; y < height; y++)
@@ -132,9 +133,9 @@ void MovieWriter::addFrame(const uint8_t* pixels)
 		for (unsigned int x = 0; x < width; x++)
 		{
 			// rgbpic->linesize[0] is equal to width.
-			rgbpic->data[0][y * rgbpic->linesize[0] + 3 * x + 0] = pixels[y * 4 * width + 4 * x + 2];
-			rgbpic->data[0][y * rgbpic->linesize[0] + 3 * x + 1] = pixels[y * 4 * width + 4 * x + 1];
-			rgbpic->data[0][y * rgbpic->linesize[0] + 3 * x + 2] = pixels[y * 4 * width + 4 * x + 0];
+			rgbpic->data[0][y * rgbpic->linesize[0] + 3 * x + 0] = pixels[y * channels * width + channels * x + 0];
+			rgbpic->data[0][y * rgbpic->linesize[0] + 3 * x + 1] = pixels[y * channels * width + channels * x + 1];
+			rgbpic->data[0][y * rgbpic->linesize[0] + 3 * x + 2] = pixels[y * channels * width + channels * x + 2];
 		}
 	}
 

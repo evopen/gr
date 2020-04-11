@@ -144,92 +144,60 @@ inline void LoadSkybox(std::filesystem::path dir, Skybox& skybox)
     cv::cvtColor(skybox.right, skybox.right, cv::COLOR_BGR2RGB);
 }
 
+static inline bool abs_compare(int a, int b)
+{
+    return (std::abs(a) < std::abs(b));
+}
+
 inline glm::dvec3 SkyboxSampler(const glm::dvec3& tex_coord, const Skybox& skybox)
 {
-    int tex_size = 4096;
-
-    glm::dvec3 coord_abs = glm::abs(tex_coord);
-    int side_index       = 0;
-
-    if (coord_abs.x - coord_abs.y < DBL_EPSILON && coord_abs.x - coord_abs.z < DBL_EPSILON)
-    {
-        side_index = 2;
-    }
-    else
-    {
-        if (coord_abs.x > coord_abs.y && coord_abs.x > coord_abs.z)
-        {
-            side_index = 0;
-        }
-        else if (coord_abs.y > coord_abs.x && coord_abs.y > coord_abs.z)
-        {
-            side_index = 1;
-        }
-        else
-        {
-            side_index = 2;
-        }
-    }
-
-    double scale = 0;
-    if (tex_coord[side_index] < 0)
-    {
-        scale = -1 / tex_coord[side_index];
-    }
-    else
-    {
-        scale = 1 / tex_coord[side_index];
-    }
-    tex_coord = tex_coord * scale;
+    std::vector<double> temp_vector = {tex_coord.x, tex_coord.y, tex_coord.z};
+    int max_abs_index =
+        std::distance(temp_vector.begin(), std::max_element(temp_vector.begin(), temp_vector.end(), abs_compare));
 
     const cv::Mat* image;
-    glm::dvec2 coord_2d;
 
-    if (side_index == 2)
+    switch (max_abs_index)
     {
-        if (tex_coord[side_index] > 0)
-        {
+    case 2:
+        if (tex_coord[max_abs_index] > 0)
             image = &skybox.back;
-        }
-        else if (tex_coord[side_index] < 0)
-        {
+        else
             image = &skybox.front;
-        }
-        coord_2d.x = (tex_coord.x + 1) / 2;
-        coord_2d.y = (tex_coord.y + 1) / 2;
-    }
-    else if (side_index == 1)
-    {
-        if (tex_coord[side_index] > 0)
-        {
+        break;
+    case 1:
+        if (tex_coord[max_abs_index] > 0)
             image = &skybox.top;
-        }
-        else if (tex_coord[side_index] < 0)
-        {
+        else
             image = &skybox.bottom;
-        }
-        coord_2d.x = (tex_coord.x + 1) / 2;
-        coord_2d.y = (tex_coord.z + 1) / 2;
-    }
-    else if (side_index == 0)
-    {
-        if (tex_coord[side_index] > 0)
-        {
+        break;
+    case 0:
+        if (tex_coord[max_abs_index] > 0)
             image = &skybox.right;
-        }
-        else if (tex_coord[side_index] < 0)
-        {
+        else
             image = &skybox.left;
-        }
-        coord_2d.x = (tex_coord.y + 1) / 2;
-        coord_2d.y = (tex_coord.z + 1) / 2;
+        break;
+    default:
+        throw std::runtime_error("error");
     }
 
-    cv::Vec3f color;
+    double scale = 1 / tex_coord[max_abs_index];
 
-    int row = std::lround((1 - coord_2d[1]) * (tex_size - 1));
-    int col = std::lround(coord_2d[0] * (tex_size - 1));
-    color   = image->at<cv::Vec3f>(row, col);
+    // delete index that I don't need
+    temp_vector.erase(temp_vector.begin() + max_abs_index);
+
+    glm::dvec2 coord_2d(std::min(1.0, std::max(0.0, (tex_coord[0] * scale + 1) / 2)),
+        std::min(1.0, std::max(0.0, (tex_coord[1] * scale + 1) / 2)));
+
+    if (coord_2d.x > 1 || coord_2d.y > 1 || coord_2d.x < 0 || coord_2d.y < 0)
+        throw std::runtime_error("2d coord out of range 0 to 1");
+
+
+    int max_row_col = 4095;
+
+    int row         = std::lround(coord_2d[1] * max_row_col);
+    int col         = std::lround(coord_2d[0] * max_row_col);
+    cv::Vec3f color = image->at<cv::Vec3f>(row, col);
     return glm::dvec3(color[0], color[1], color[2]);
 }
 
@@ -360,3 +328,12 @@ glm::dvec3 GetTexCoord(int row, int col, int width, int height)
     double y = double(height - row - 1) / (height - 1) * (1 - (-1)) - 1;
     return glm::dvec3(x, y, z);
 }
+
+
+//glm::dvec3 GetTexCoord2(int row, int col, int width, int height, const Camera& cam)
+//{
+//    double z = -1;
+//    double x = double(col) / (width - 1) * (1 - (-1)) - 1;
+//    double y = double(height - row - 1) / (height - 1) * (1 - (-1)) - 1;
+//    return glm::dvec3(x, y, z);
+//}
