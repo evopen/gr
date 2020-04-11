@@ -1,6 +1,7 @@
 # Visual Studio
 out/
 .vs/
+build/
 
 # Code Analysis Reports
 clang_tidy.txt
@@ -11,5 +12,5 @@ gcov.xml
 # Visual Studio Test Reports
 TestResults/
 
-movie.mp4
+movie*.mp4
 raytraced.png

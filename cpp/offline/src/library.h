@@ -1,7 +1,5 @@
 #include "pch.h"
 
-#include <glm/gtx/rotate_vector.hpp>
-
 using namespace boost::math::constants;
 
 struct Skybox
@@ -115,36 +113,54 @@ inline double Integrate(double r0, double r1, double b, gsl_integration_workspac
     return dphi;
 }
 
-inline void LoadSkybox(std::filesystem::path dir, Skybox& skybox)
+double ode23(double x0, double x1, double h, double b)
 {
-    cv::Mat image;
+    double tolerance = 1e-7;
+    double y         = 0;
+    bool negative    = false;
+    if (x0 > x1)
+    {
+        std::swap(x0, x1);
+        negative = true;
+    }
+    while (x0 < x1)
+    {
+        double k1 = Geodesic(x0, b);
+        double k2 = Geodesic(x0 + h / 2, b);
+        double k3 = Geodesic(x0 + h * 0.75, b);
 
-    image = cv::imread((dir / "front.jpg").string());
-    image.convertTo(skybox.front, CV_32F, 1.0 / 255);
-    cv::cvtColor(skybox.front, skybox.front, cv::COLOR_BGR2RGB);
+        double x_next = x0 + h;
+        double y_next = y + (2 * k1 + 3 * k2 + 4 * k3) / 9 * h;
 
-    image = cv::imread((dir / "back.jpg").string());
-    image.convertTo(skybox.back, CV_32F, 1.0 / 255);
-    cv::cvtColor(skybox.back, skybox.back, cv::COLOR_BGR2RGB);
+        double k4    = Geodesic(x0 + h, b);
+        double error = std::abs(-5 * k1 + 6 * k2 + 8 * k3 - 9 * k4) / 72 * h;
 
-    image = cv::imread((dir / "top.jpg").string());
-    image.convertTo(skybox.top, CV_32F, 1.0 / 255);
-    cv::cvtColor(skybox.top, skybox.top, cv::COLOR_BGR2RGB);
+        h = h * std::min(std::max(std::sqrt(tolerance / (2 * error)), 0.3), 2.0);
+        if (error > tolerance)
+        {
+            continue;
+        }
+        else
+        {
+            y  = y_next;
+            x0 = x_next;
+        }
+    }
 
-    image = cv::imread((dir / "bottom.jpg").string());
-    image.convertTo(skybox.bottom, CV_32F, 1.0 / 255);
-    cv::cvtColor(skybox.bottom, skybox.bottom, cv::COLOR_BGR2RGB);
-
-    image = cv::imread((dir / "left.jpg").string());
-    image.convertTo(skybox.left, CV_32F, 1.0 / 255);
-    cv::cvtColor(skybox.left, skybox.left, cv::COLOR_BGR2RGB);
-
-    image = cv::imread((dir / "right.jpg").string());
-    image.convertTo(skybox.right, CV_32F, 1.0 / 255);
-    cv::cvtColor(skybox.right, skybox.right, cv::COLOR_BGR2RGB);
+    return negative ? -y : y;
 }
 
-static inline bool abs_compare(int a, int b)
+inline void LoadSkybox(std::filesystem::path dir, Skybox& skybox)
+{
+    skybox.front  = cv::imread((dir / "front.jpg").string());
+    skybox.back   = cv::imread((dir / "back.jpg").string());
+    skybox.top    = cv::imread((dir / "top.jpg").string());
+    skybox.bottom = cv::imread((dir / "bottom.jpg").string());
+    skybox.left   = cv::imread((dir / "left.jpg").string());
+    skybox.right  = cv::imread((dir / "right.jpg").string());
+}
+
+static inline bool AbsCompare(int a, int b)
 {
     return (std::abs(a) < std::abs(b));
 }
@@ -153,7 +169,7 @@ inline glm::dvec3 SkyboxSampler(const glm::dvec3& tex_coord, const Skybox& skybo
 {
     std::vector<double> temp_vector = {tex_coord.x, tex_coord.y, tex_coord.z};
     int max_abs_index =
-        std::distance(temp_vector.begin(), std::max_element(temp_vector.begin(), temp_vector.end(), abs_compare));
+        std::distance(temp_vector.begin(), std::max_element(temp_vector.begin(), temp_vector.end(), AbsCompare));
 
     const cv::Mat* image;
 
@@ -197,8 +213,8 @@ inline glm::dvec3 SkyboxSampler(const glm::dvec3& tex_coord, const Skybox& skybo
 
     int row         = std::lround(coord_2d[1] * max_row_col);
     int col         = std::lround(coord_2d[0] * max_row_col);
-    cv::Vec3f color = image->at<cv::Vec3f>(row, col);
-    return glm::dvec3(color[0], color[1], color[2]);
+    cv::Vec3b color = image->at<cv::Vec3b>(row, col);
+    return glm::dvec3((double) color[2] / 255, (double) color[1] / 255, (double) color[0] / 255);
 }
 
 inline glm::dvec3 DiskSampler(glm::dvec3 start_pos, double b, double r0, double r1, glm::dvec3 rotation_axis,
@@ -213,24 +229,29 @@ inline glm::dvec3 DiskSampler(glm::dvec3 start_pos, double b, double r0, double 
     {
         direction = -1;
     }
-    start_pos                = start_pos / length(start_pos) * r0;
-    double step_size         = 0.05;
+    start_pos = start_pos / length(start_pos) * r0;
+    double step_size;
     glm::dvec3 pos_near_disk = start_pos;
     glm::dvec3 pos           = start_pos;
     double integrate_span    = std::abs(r0 - r1);
 
-    int steps = int(integrate_span / step_size);
+    // int steps = int(integrate_span / step_size);
+    double r = r0;
 
-    for (int step = 1; step <= steps; ++step)
+    while (true)
     {
         glm::dvec3 last_pos = pos;
         if (abs(pos[1]) < abs(pos_near_disk[1]))
         {
             pos_near_disk = pos;
         }
-        double dphi = Integrate(r0, r0 + step * step_size * direction, b, w);
+        step_size = std::max(std::abs(pos.y) * 0.01, 0.001);
+        r += direction * step_size;
+        if (r * direction > r1 * direction)
+            break;
+        double dphi = Integrate(r0, r, b, w);
         pos         = glm::rotate(start_pos, abs(dphi), rotation_axis);
-        pos         = pos / glm::length(pos) * (r0 + step * step_size * direction);
+        pos         = pos / glm::length(pos) * r;
         if (pos[1] * last_pos[1] < 0)
             break;
     }
@@ -258,17 +279,16 @@ inline glm::dvec3 Trace(
     double integrate_end     = 2000;
     if (b < std::sqrt(27))
     {
+        // Debug
+        // return glm::dvec3(1, 1, 1);
+
         double dphi                 = std::fmod(Integrate(r0, bh.disk_outer, b, w), 2 * pi<double>());  /// here
         glm::dvec3 photon_pos_start = glm::rotate(cam.position, -dphi, rotation_axis);
         double dphi_in_disk         = Integrate(bh.disk_outer, bh.disk_inner, b, w);
-        if (std::abs(dphi_in_disk) > pi<double>())
-        {
-            return DiskSampler(photon_pos_start, b, bh.disk_outer, bh.disk_inner, rotation_axis, bh, w);
-        }
-        dphi                      = std::fmod(dphi + dphi_in_disk, pi<double>() * 2);
-        glm::dvec3 photon_pos_end = glm::rotate(cam.position, -dphi, rotation_axis);
+        dphi                        = std::fmod(dphi + dphi_in_disk, pi<double>() * 2);
+        glm::dvec3 photon_pos_end   = glm::rotate(cam.position, -dphi, rotation_axis);
 
-        if (photon_pos_start[1] * photon_pos_end[1] < 0)
+        if (std::abs(dphi_in_disk) > pi<double>() || photon_pos_start[1] * photon_pos_end[1] < 0)
         {
             return DiskSampler(photon_pos_start, b, bh.disk_outer, bh.disk_inner, rotation_axis, bh, w);
         }
@@ -279,6 +299,9 @@ inline glm::dvec3 Trace(
         double r3 = FindClosestApproach1(r0, b);
         if (r3 > bh.disk_outer)
         {
+            // Debug
+            // return glm::dvec3(0, 0, 1);
+
             double dphi = std::fmod(Integrate(r0, r3, b, w) - Integrate(r3, integrate_end, b, w), pi<double>() * 2);
 
             glm::dvec3 distort_coord = glm::rotate(cam.position, -dphi, rotation_axis);
@@ -295,18 +318,40 @@ inline glm::dvec3 Trace(
             else
             {
                 double dphi_in_disk       = Integrate(bh.disk_outer, r3, b, w);
-                dphi                      = std::fmod(dphi + dphi_in_disk, pi<double>() * 2);
+                double old_dphi           = dphi;
+                dphi                      = dphi + dphi_in_disk;
                 glm::dvec3 photon_pos_end = glm::rotate(cam.position, -dphi, rotation_axis);
-                if (photon_pos_start[1] * photon_pos_end[1] < 0)
+
+                // Debug
+                /*          if (tex_coord[1] > -0.35 || tex_coord[1] < -0.45 || tex_coord[0] < -0.22 || tex_coord[0] >
+                   0.22)
+                          {
+
+
+                              return glm::dvec3(1, 1, 0);
+                          }
+                          else
+                          {
+
+                              std::cout << dphi_in_disk << "\n";
+                          }*/
+
+                //////
+
+                if (std::abs(dphi_in_disk) > pi<double>() || photon_pos_start[1] * photon_pos_end[1] < 0)
                 {
+                    // Debug
+                    // return glm::dvec3(0, 0, 0);
                     return DiskSampler(photon_pos_start, b, bh.disk_outer, r3, rotation_axis, bh, w);
                 }
                 photon_pos_start = photon_pos_end;
                 dphi_in_disk     = Integrate(r3, bh.disk_outer, b, w);
                 dphi             = std::fmod(dphi - dphi_in_disk, pi<double>() * 2);
                 photon_pos_end   = glm::rotate(cam.position, -dphi, rotation_axis);
-                if (photon_pos_start[1] * photon_pos_end[1] < 0)
+                if (std::abs(dphi_in_disk) > pi<double>() || photon_pos_start[1] * photon_pos_end[1] < 0)
                 {
+                    // Debug
+                    // return glm::dvec3(0, 0, 1);
                     return DiskSampler(photon_pos_start, b, r3, bh.disk_outer, rotation_axis, bh, w);
                 }
 
@@ -318,7 +363,7 @@ inline glm::dvec3 Trace(
             }
         }
     }
-    return glm::dvec3(0, 0, 0);
+    return glm::dvec3(1, 0, 0);
 }
 
 glm::dvec3 GetTexCoord(int row, int col, int width, int height)
@@ -330,7 +375,7 @@ glm::dvec3 GetTexCoord(int row, int col, int width, int height)
 }
 
 
-//glm::dvec3 GetTexCoord2(int row, int col, int width, int height, const Camera& cam)
+// glm::dvec3 GetTexCoord2(int row, int col, int width, int height, const Camera& cam)
 //{
 //    double z = -1;
 //    double x = double(col) / (width - 1) * (1 - (-1)) - 1;

@@ -46,6 +46,15 @@ TEST(LibraryTest, Integrate2T)
     EXPECT_NEAR(Integrate(13, 2000, 14, w), 1.5835582261400813, 1.0e-5);
 }
 
+TEST(LibraryTest, IntegrateODE23T)
+{
+    EXPECT_NEAR(ode23(30, 20, 0.001, 10), -0.18206352097090867, 1.0e-3);
+    EXPECT_NEAR(ode23(10, 60, 0.001, 8), 0.7641980989670553, 1.0e-3);
+    EXPECT_NEAR(ode23(10, 600, 0.001, 8), 0.8845859084325743, 1.0e-3);
+    EXPECT_NEAR(ode23(10, 6000, 0.001, 8), 0.8965863021431181, 1.0e-3);
+    EXPECT_NEAR(ode23(13, 2000, 0.001, 14), 1.5835582261400813, 1.0e-3);
+}
+
 TEST(LibraryTest, SkyboxSamplerT)
 {
     Skybox skybox;
@@ -74,7 +83,7 @@ TEST(LibraryTest, DiskSamplerT)
 {
     glm::dvec3 color;
     Blackhole bh;
-    bh.position = glm::dvec3(0, 0, 0);
+    bh.position   = glm::dvec3(0, 0, 0);
     bh.disk_inner = 2;
     bh.disk_outer = 10;
     GenerateDiskTexture(bh);
@@ -88,7 +97,8 @@ TEST(LibraryTest, DiskSamplerT)
         EXPECT_NEAR(color[0], 0.6, 1.0e-5);
         EXPECT_NEAR(color[1], 0.4, 1.0e-5);
         EXPECT_NEAR(color[2], 0, 1.0e-5);
-    }catch(std::exception& e)
+    }
+    catch (std::exception& e)
     {
         std::cerr << e.what() << std::endl;
     }
