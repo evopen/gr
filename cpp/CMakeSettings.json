@@ -10,7 +10,22 @@
       "buildCommandArgs": "-v",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "clang_cl_x64" ],
-      "variables": []
+      "variables": [
+        {
+          "name": "CMAKE_CXX_COMPILER",
+          "value": "C:/Users/DHH/scoop/shims/clang-cl.exe",
+          "type": "FILEPATH"
+        },
+        {
+          "name": "CMAKE_C_COMPILER",
+          "value": "C:/Users/DHH/scoop/shims/clang-cl.exe",
+          "type": "FILEPATH"
+        }
+      ],
+      "cmakeExecutable": "C:/Users/DHH/scoop/shims/cmake.exe",
+      "enableMicrosoftCodeAnalysis": false,
+      "enableClangTidyCodeAnalysis": true,
+      "clangTidyChecks": "-*,readability-identifier-*,bugprone-*"
     },
     {
       "name": "x64-Clang-Release",
@@ -22,7 +37,22 @@
       "buildCommandArgs": "-v",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "clang_cl_x64" ],
-      "variables": []
+      "variables": [
+        {
+          "name": "CMAKE_CXX_COMPILER",
+          "value": "C:/Users/DHH/scoop/shims/clang-cl.exe",
+          "type": "FILEPATH"
+        },
+        {
+          "name": "CMAKE_C_COMPILER",
+          "value": "C:/Users/DHH/scoop/shims/clang-cl.exe",
+          "type": "FILEPATH"
+        }
+      ],
+      "cmakeExecutable": "C:/Users/DHH/scoop/shims/cmake.exe",
+      "enableMicrosoftCodeAnalysis": false,
+      "enableClangTidyCodeAnalysis": true,
+      "clangTidyChecks": "-*,readability-identifier-*,bugprone-*"
     }
   ]
 }

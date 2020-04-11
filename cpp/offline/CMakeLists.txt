@@ -10,7 +10,6 @@ set(TEST_DIR "${CMAKE_CURRENT_LIST_DIR}/test")
 
 add_subdirectory(${SOURCE_DIR})
 
-include(CTest)
 if(BUILD_TESTING)
 	add_subdirectory(${TEST_DIR})
 endif()
