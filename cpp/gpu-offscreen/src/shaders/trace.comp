@@ -1,9 +1,9 @@
 #version 450
 
-#define WIDTH 1024
-#define HEIGHT 1024
+layout (constant_id = 0) const int WIDTH = 4;
+layout (constant_id = 1) const int HEIGHT = 4;
 
-layout (local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
+layout (local_size_x = 4, local_size_y = 4, local_size_z = 1) in;
 
 layout (binding = 0) uniform samplerCube skybox;
 
@@ -12,18 +12,21 @@ layout (set = 0, binding = 1) uniform object_info {
 	vec3 bh_pos;
 };
 
-layout(binding = 3) uniform tex_coord {
-	vec3 coords[WIDTH][HEIGHT];
+
+layout (binding = 2) buffer readonly coord_buf {
+	vec3 coords[];
 };
 
-layout (binding = 2, rgba8) uniform image2D result_image;
+layout (binding = 3, rgba8) uniform image2D result_image;
 
 void main()
 {
 	uint row = gl_GlobalInvocationID.x;
 	uint col = gl_GlobalInvocationID.y;
-	if (row > HEIGHT || col > WIDTH)
+	if (row > 1 || col > 1)
 		return;
 
-	imageStore(result_image, ivec2(row,col), vec4(1,0,0,1));
+	imageStore(result_image, ivec2(row,col), vec4(0.1,0,1,1));
+	barrier();
+	memoryBarrier();
 }

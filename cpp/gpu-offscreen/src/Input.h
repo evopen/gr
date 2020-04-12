@@ -7,21 +7,21 @@ namespace dhh::input
 {
     static dhh::camera::Camera* camera;
 
-    inline void cursorPosCallback(GLFWwindow* window, double x, double y)
+    inline void CursorPosCallback(GLFWwindow* window, double x, double y)
     {
         int width, height;
         glfwGetWindowSize(window, &width, &height);
-        float offsetX = x - (float) width / 2;
-        float offsetY = (float) height / 2 - y;
+        float offset_x = x - (float) width / 2;
+        float offset_y = (float) height / 2 - y;
 
         if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
         {
-            camera->ProcessMouseMovement(offsetX, offsetY);
+            camera->ProcessMouseMovement(offset_x, offset_y);
             glfwSetCursorPos(window, width / 2, height / 2);
         }
     }
 
-    inline void scrollCallback(GLFWwindow* window, double offsetX, double offsetY)
+    inline void ScrollCallback(GLFWwindow* window, double offsetX, double offsetY)
     {
         if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
         {
@@ -29,12 +29,12 @@ namespace dhh::input
         }
     }
 
-    inline void processKeyboard(GLFWwindow* window, dhh::camera::Camera& camera)
+    inline void ProcessKeyboard(GLFWwindow* window, dhh::camera::Camera& camera)
     {
-        static float lastTime   = glfwGetTime();
-        const float currentTime = glfwGetTime();
-        const float deltaTime   = currentTime - lastTime;
-        lastTime                = currentTime;
+        static float last_time   = glfwGetTime();
+        const float kCurrentTime = glfwGetTime();
+        const float kDeltaTime   = kCurrentTime - last_time;
+        last_time                = kCurrentTime;
 
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         {
@@ -43,27 +43,27 @@ namespace dhh::input
 
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         {
-            camera.ProcessMove(dhh::camera::FORWARD, deltaTime);
+            camera.ProcessMove(dhh::camera::kForward, kDeltaTime);
         }
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
         {
-            camera.ProcessMove(dhh::camera::BACKWARD, deltaTime);
+            camera.ProcessMove(dhh::camera::kBackward, kDeltaTime);
         }
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         {
-            camera.ProcessMove(dhh::camera::RIGHT, deltaTime);
+            camera.ProcessMove(dhh::camera::kRight, kDeltaTime);
         }
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         {
-            camera.ProcessMove(dhh::camera::LEFT, deltaTime);
+            camera.ProcessMove(dhh::camera::kLeft, kDeltaTime);
         }
         if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
         {
-            camera.ProcessMove(dhh::camera::UP, deltaTime);
+            camera.ProcessMove(dhh::camera::kUp, kDeltaTime);
         }
         if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
         {
-            camera.ProcessMove(dhh::camera::DOWN, deltaTime);
+            camera.ProcessMove(dhh::camera::kDown, kDeltaTime);
         }
         if (glfwGetKey(window, GLFW_KEY_F1) == GLFW_PRESS)
         {

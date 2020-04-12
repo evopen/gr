@@ -12,120 +12,123 @@
 
 struct QueueFamilyIndex
 {
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-    std::optional<uint32_t> transferFamily;
+    std::optional<uint32_t> graphics_family;
+    std::optional<uint32_t> present_family;
+    std::optional<uint32_t> transfer_family;
 
-    bool isComplete() { return graphicsFamily.has_value() && presentFamily.has_value() && transferFamily.has_value(); }
+    bool IsComplete()
+    {
+        return graphics_family.has_value() && present_family.has_value() && transfer_family.has_value();
+    }
 };
 
-const std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+const std::vector<const char*> kDeviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
-const std::vector<const char*> extraLayers = {"VK_LAYER_LUNARG_monitor"};
+const std::vector<const char*> kExtraLayers = {"VK_LAYER_LUNARG_monitor"};
 
-const int MAX_FRAMES_IN_FLIGHT = 2;
+const int kMaxFramesInFlight = 2;
 
 class VulkanBase
 {
 public:
-    uint32_t windowWidth  = 800;
-    uint32_t windowHeight = 600;
+    uint32_t window_width  = 800;
+    uint32_t window_height = 600;
     GLFWwindow* window;
-    std::string appName          = "numerous";
-    std::string windowTitle      = appName;
-    const uint32_t appVersion    = VK_MAKE_VERSION(0, 0, 1);
-    const uint32_t engineVersion = VK_MAKE_VERSION(0, 0, 1);
-    bool enableValidation        = true;
-    QueueFamilyIndex queueFamilyIndex;
+    std::string app_name          = "numerous";
+    std::string window_title      = app_name;
+    const uint32_t kAppVersion    = VK_MAKE_VERSION(0, 0, 1);
+    const uint32_t kEngineVersion = VK_MAKE_VERSION(0, 0, 1);
+    bool enable_validation        = true;
+    QueueFamilyIndex queue_family_index;
 
 private:
-    VkDebugUtilsMessengerEXT debugMessenger;
+    VkDebugUtilsMessengerEXT debugMessenger_;
 
 public:
     VmaAllocator allocator;
     VkInstance instance;
-    VkPhysicalDevice physicalDevice;
+    VkPhysicalDevice physical_device;
     VkDevice device;
     VkSurfaceKHR surface;
     VkSwapchainKHR swapchain;
-    std::vector<VkImage> swapchainImages;
-    std::vector<VkImageView> swapchainImageViews;
-    VkRenderPass renderPass;
-    VkSurfaceFormatKHR surfaceFormat;
-    VkSurfaceCapabilitiesKHR surfaceCapabilities;
-    VkImage colorImage;
-    VmaAllocation colorImageAllocation;
-    VkImageView colorImageView;
-    VkImage depthImage;
-    VmaAllocation depthImageAllocation;
-    VkImageView depthImageView;
-    VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
-    VkFormat depthImageFormat         = VK_FORMAT_D32_SFLOAT;
+    std::vector<VkImage> swapchain_images;
+    std::vector<VkImageView> swapchain_image_views;
+    VkRenderPass render_pass;
+    VkSurfaceFormatKHR surface_format;
+    VkSurfaceCapabilitiesKHR surface_capabilities;
+    VkImage color_image;
+    VmaAllocation color_image_allocation;
+    VkImageView color_image_view;
+    VkImage depth_image;
+    VmaAllocation depth_image_allocation;
+    VkImageView depth_image_view;
+    VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT;
+    VkFormat depth_image_format        = VK_FORMAT_D32_SFLOAT;
     std::vector<VkFramebuffer> framebuffers;
-    VkCommandPool commandPool;
-    std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
-    std::vector<VkFence> inFlightFences;
+    VkCommandPool command_pool;
+    std::vector<VkSemaphore> image_available_semaphores;
+    std::vector<VkSemaphore> render_finished_semaphores;
+    std::vector<VkFence> in_flight_fences;
     VkPipeline pipeline;
-    VkPipelineLayout pipelineLayout;
-    std::vector<VkCommandBuffer> commandBuffers;
-    VkQueue graphicsQueue;
-    VkQueue transferQueue;
-    VkQueue presentQueue;
-    VkDescriptorSetLayout descriptorSetLayout;
-    VkDescriptorPool descriptorPool;
-    std::vector<VkDescriptorSet> descriptorSets;
-    std::vector<VkBuffer> uniformBuffers;
-    std::vector<VmaAllocation> uniformBufferAllocation;
-    size_t currentFrame = 0;
+    VkPipelineLayout pipeline_layout;
+    std::vector<VkCommandBuffer> command_buffers;
+    VkQueue graphics_queue;
+    VkQueue transfer_queue;
+    VkQueue present_queue;
+    VkDescriptorSetLayout descriptor_set_layout;
+    VkDescriptorPool descriptor_pool;
+    std::vector<VkDescriptorSet> descriptor_sets;
+    std::vector<VkBuffer> uniform_buffers;
+    std::vector<VmaAllocation> uniform_buffer_allocation;
+    size_t current_frame = 0;
     dhh::camera::Camera camera;
 
 
 public:
-    explicit VulkanBase(bool enableValidation) : enableValidation(enableValidation) {}
+    explicit VulkanBase(bool enableValidation) : enable_validation(enableValidation) {}
 
-    void init();
-
-private:
-    void initWindow();
-    void initVulkan();
+    void Init();
 
 private:
-    void createInstance();
-    void setupDebugMessenger();
-    void pickPhysicalDevice();
-    void findQueueFamilyIndex();
-    void createLogicalDevice();
-    void createMemoryAllocator();
-    void createSwapchain();
-    void createSwapchainImageViews();
-    void createRenderPass();
-    void createDepthResources();
-    void createFramebuffers();
-    void createCommandPool();
-    void createSyncObjects();
-    void createDescriptorPool();
-    void allocateCommandbuffers();
-    VkPresentModeKHR choosePresentMode();
+    void InitWindow();
+    void InitVulkan();
+
+private:
+    void CreateInstance();
+    void SetupDebugMessenger();
+    void PickPhysicalDevice();
+    void FindQueueFamilyIndex();
+    void CreateLogicalDevice();
+    void CreateMemoryAllocator();
+    void CreateSwapchain();
+    void CreateSwapchainImageViews();
+    void CreateRenderPass();
+    void CreateDepthResources();
+    void CreateFramebuffers();
+    void CreateCommandPool();
+    void CreateSyncObjects();
+    void CreateDescriptorPool();
+    void AllocateCommandbuffers();
+    VkPresentModeKHR ChoosePresentMode();
 
 public:
-    void drawFrame();
-    void createUniformBuffer(VkDeviceSize bufferSize);
+    void DrawFrame();
+    void CreateUniformBuffer(VkDeviceSize bufferSize);
 
 protected:
-    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void* pUserData);
-    std::vector<const char*> getRequiredExtensions();
-    std::vector<const char*> getRequiredLayers();
-    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlagBits aspectFlags, uint32_t mipLevels);
-    VkSurfaceFormatKHR chooseSurfaceFormat();
-    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, VkBuffer& buffer,
+    std::vector<const char*> GetRequiredExtensions();
+    std::vector<const char*> GetRequiredLayers();
+    VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlagBits aspectFlags, uint32_t mipLevels);
+    VkSurfaceFormatKHR ChooseSurfaceFormat();
+    void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, VkBuffer& buffer,
         VmaAllocation& allocation);
-    void createImage(uint32_t width, uint32_t height, uint32_t mipLevelCount, VkSampleCountFlagBits sampleCount,
+    void CreateImage(uint32_t width, uint32_t height, uint32_t mipLevelCount, VkSampleCountFlagBits sampleCount,
         VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage, VkImage& image,
-        VmaAllocation& allocation);
+        VmaAllocation& allocation, uint32_t layers = 1);
 
 public:
-    VkShaderModule createShaderModule(const std::string& filename);
+    VkShaderModule CreateShaderModule(const std::string& filename);
 };

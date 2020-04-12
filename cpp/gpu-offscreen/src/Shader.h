@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Filesystem.h"
+
 #include <shaderc/shaderc.hpp>
 #include <spirv_cross/spirv_reflect.hpp>
 #include <vulkan/vulkan.h>
@@ -13,10 +14,10 @@ namespace dhh::shader
 {
     enum ShaderType
     {
-        Vertex,
-        Geometry,
-        Fragment,
-        Compute,
+        kVertex,
+        kGeometry,
+        kFragment,
+        kCompute,
     };
 
     struct DescriptorInfo
@@ -24,22 +25,22 @@ namespace dhh::shader
         uint32_t binding;
         uint32_t count;
         uint32_t set;
-        VkDescriptorType vkDescriptorType;
+        VkDescriptorType vk_descriptor_type;
         VkShaderStageFlags stages;
     };
 
-    inline VkShaderStageFlagBits getVulkanShaderType(ShaderType Type)
+    inline VkShaderStageFlagBits GetVulkanShaderType(ShaderType Type)
     {
-        VkShaderStageFlagBits Table[] = {
+        VkShaderStageFlagBits table[] = {
             VK_SHADER_STAGE_VERTEX_BIT,
             VK_SHADER_STAGE_GEOMETRY_BIT,
             VK_SHADER_STAGE_FRAGMENT_BIT,
             VK_SHADER_STAGE_COMPUTE_BIT,
         };
-        return Table[Type];
+        return table[Type];
     }
 
-    inline VkFormat getVulkanFormat(const spirv_cross::SPIRType type)
+    inline VkFormat GetVulkanFormat(const spirv_cross::SPIRType kType)
     {
         VkFormat float_types[] = {
             VK_FORMAT_R32_SFLOAT, VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32A32_SFLOAT};
@@ -50,18 +51,18 @@ namespace dhh::shader
             VK_FORMAT_R64G64B64_SFLOAT,
             VK_FORMAT_R64G64B64A64_SFLOAT,
         };
-        switch (type.basetype)
+        switch (kType.basetype)
         {
         case spirv_cross::SPIRType::Float:
-            return float_types[type.vecsize - 1];
+            return float_types[kType.vecsize - 1];
         case spirv_cross::SPIRType::Double:
-            return double_types[type.vecsize - 1];
+            return double_types[kType.vecsize - 1];
         default:
             throw std::runtime_error("Cannot find VK_Format");
         }
     }
 
-    inline std::filesystem::path findShaderDirectory()
+    inline std::filesystem::path FindShaderDirectory()
     {
 #ifdef SHADER_DIR
         std::filesystem::path path(SHADER_DIR);
@@ -71,13 +72,18 @@ namespace dhh::shader
         }
 #endif
 
-        std::filesystem::path current_path     = std::filesystem::current_path();
-        const std::string ShadersDirectoryName = "shaders";
+        std::filesystem::path current_path      = std::filesystem::current_path();
+        const std::string kShadersDirectoryName = "shaders";
         while (true)
         {
-            if (std::filesystem::exists(current_path / ShadersDirectoryName))
+            if (std::filesystem::exists(current_path / "src" / kShadersDirectoryName))
             {
-                return (current_path / ShadersDirectoryName).string();
+                return (current_path / "src" / kShadersDirectoryName).string();
+            }
+
+            if (std::filesystem::exists(current_path / kShadersDirectoryName))
+            {
+                return (current_path / kShadersDirectoryName).string();
             }
 
             if (current_path.root_path() != current_path.parent_path())
@@ -95,56 +101,56 @@ namespace dhh::shader
     class Shader
     {
     public:
-        Shader(std::filesystem::path glslPath) : glslPath(glslPath), stageInputSize(0)
+        Shader(std::filesystem::path glslPath) : glsl_path(glslPath), stageInputSize_(0)
         {
-            glslText = dhh::filesystem::loadFile(glslPath, false);
-            type     = getShaderType(glslPath);
-            spirv    = compile();
-            reflect();
+            glslText_ = dhh::filesystem::LoadFile(glslPath, false);
+            type      = GetShaderType(glslPath);
+            spirv_    = Compile();
+            Reflect();
         }
 
-        std::vector<VkVertexInputBindingDescription> getVertexInputBindingDescription() const
+        std::vector<VkVertexInputBindingDescription> GetVertexInputBindingDescription() const
         {
-            if (type != Vertex)
+            if (type != kVertex)
             {
                 throw std::runtime_error("Need vertex shader");
             }
-            VkVertexInputBindingDescription Description = {};
-            Description.binding                         = 0;
-            Description.inputRate                       = VK_VERTEX_INPUT_RATE_VERTEX;
-            Description.stride                          = stageInputSize;
+            VkVertexInputBindingDescription description = {};
+            description.binding                         = 0;
+            description.inputRate                       = VK_VERTEX_INPUT_RATE_VERTEX;
+            description.stride                          = stageInputSize_;
 
-            return {Description};
+            return {description};
         }
 
-        std::vector<VkVertexInputAttributeDescription> getVertexInputAttributeDescriptions() const
+        std::vector<VkVertexInputAttributeDescription> GetVertexInputAttributeDescriptions() const
         {
-            if (type != Vertex)
+            if (type != kVertex)
             {
                 throw std::runtime_error("Need vertex shader");
             }
-            return vertexInputAttributeDescriptions;
+            return vertexInputAttributeDescriptions_;
         }
 
-        VkPipelineShaderStageCreateInfo getPipelineShaderStageCreateInfo(VkShaderModule shaderModule)
+        VkPipelineShaderStageCreateInfo GetPipelineShaderStageCreateInfo(VkShaderModule shaderModule)
         {
             VkPipelineShaderStageCreateInfo info = {};
             info.sType                           = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
             info.module                          = shaderModule;
             info.pName                           = "main";
-            info.stage                           = getVulkanShaderType(type);
+            info.stage                           = GetVulkanShaderType(type);
             return info;
         }
 
-        VkShaderModule createVulkanShaderModule(VkDevice device)
+        VkShaderModule CreateVulkanShaderModule(VkDevice device)
         {
-            VkShaderModuleCreateInfo createInfo = {};
-            createInfo.sType                    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-            createInfo.codeSize                 = spirv.size() * 4;
-            createInfo.pCode                    = spirv.data();
+            VkShaderModuleCreateInfo create_info = {};
+            create_info.sType                    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+            create_info.codeSize                 = spirv_.size() * 4;
+            create_info.pCode                    = spirv_.data();
 
             VkShaderModule module;
-            if (vkCreateShaderModule(device, &createInfo, nullptr, &module) != VK_SUCCESS)
+            if (vkCreateShaderModule(device, &create_info, nullptr, &module) != VK_SUCCESS)
             {
                 throw std::runtime_error("Failed to create shader module!");
             }
@@ -154,16 +160,16 @@ namespace dhh::shader
 
     public:
         ShaderType type;
-        std::map<uint32_t, DescriptorInfo> descriptorInfos;  // multimap<Descriptor binding, DescriptorInfo>
-        std::filesystem::path glslPath;
+        std::map<uint32_t, DescriptorInfo> descriptor_infos;  // multimap<Descriptor binding, DescriptorInfo>
+        std::filesystem::path glsl_path;
 
     private:
-        std::vector<char> glslText;
-        std::vector<uint32_t> spirv;
-        std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions;
-        size_t stageInputSize;
+        std::vector<char> glslText_;
+        std::vector<uint32_t> spirv_;
+        std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions_;
+        size_t stageInputSize_;
 
-        std::vector<uint32_t> compile(bool optimize = false)
+        std::vector<uint32_t> Compile(bool optimize = false)
         {
             shaderc::Compiler compiler;
             shaderc::CompileOptions options;
@@ -172,7 +178,7 @@ namespace dhh::shader
                 options.SetOptimizationLevel(shaderc_optimization_level_performance);
             }
             shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(
-                glslText.data(), getShadercShaderType(type), glslPath.filename().string().c_str(), options);
+                glslText_.data(), GetShadercShaderType(type), glsl_path.filename().string().c_str(), options);
             if (module.GetCompilationStatus() != shaderc_compilation_status_success)
             {
                 throw std::runtime_error(module.GetErrorMessage().c_str());
@@ -180,75 +186,75 @@ namespace dhh::shader
             return {module.cbegin(), module.cend()};
         }
 
-        void reflect()
+        void Reflect()
         {
-            spirv_cross::CompilerReflection compiler(spirv);
-            spirv_cross::ShaderResources shaderResources;
-            shaderResources = compiler.get_shader_resources();
+            spirv_cross::CompilerReflection compiler(spirv_);
+            spirv_cross::ShaderResources shader_resources;
+            shader_resources = compiler.get_shader_resources();
 
-            for (const spirv_cross::Resource& resource : shaderResources.stage_inputs)
+            for (const spirv_cross::Resource& resource : shader_resources.stage_inputs)
             {
-                if (type != Vertex)
+                if (type != kVertex)
                     break;
 
-                const spirv_cross::SPIRType& InputType = compiler.get_type(resource.type_id);
+                const spirv_cross::SPIRType& input_type = compiler.get_type(resource.type_id);
 
-                VkVertexInputAttributeDescription Description = {};
-                Description.binding  = compiler.get_decoration(resource.id, spv::DecorationBinding);
-                Description.location = compiler.get_decoration(resource.id, spv::DecorationLocation);
-                Description.offset   = stageInputSize;
-                Description.format   = getVulkanFormat(InputType);
-                vertexInputAttributeDescriptions.push_back(Description);
+                VkVertexInputAttributeDescription description = {};
+                description.binding  = compiler.get_decoration(resource.id, spv::DecorationBinding);
+                description.location = compiler.get_decoration(resource.id, spv::DecorationLocation);
+                description.offset   = stageInputSize_;
+                description.format   = GetVulkanFormat(input_type);
+                vertexInputAttributeDescriptions_.push_back(description);
 
-                stageInputSize += InputType.width * InputType.vecsize / 8;
+                stageInputSize_ += input_type.width * input_type.vecsize / 8;
             }
 
             // Uniform buffer descriptor info
-            for (const spirv_cross::Resource& resource : shaderResources.uniform_buffers)
+            for (const spirv_cross::Resource& resource : shader_resources.uniform_buffers)
             {
-                DescriptorInfo info   = reflect_descriptor(compiler, resource);
-                info.vkDescriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                descriptorInfos.insert({info.binding, info});
+                DescriptorInfo info     = ReflectDescriptor(compiler, resource);
+                info.vk_descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                descriptor_infos.insert({info.binding, info});
             }
 
             // Sampled image descriptor info
-            for (const spirv_cross::Resource& resource : shaderResources.sampled_images)
+            for (const spirv_cross::Resource& resource : shader_resources.sampled_images)
             {
-                DescriptorInfo info   = reflect_descriptor(compiler, resource);
-                info.vkDescriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                descriptorInfos.insert({info.binding, info});
+                DescriptorInfo info     = ReflectDescriptor(compiler, resource);
+                info.vk_descriptor_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                descriptor_infos.insert({info.binding, info});
             }
 
             // storage buffer descriptor info
-            for (const spirv_cross::Resource& resource : shaderResources.storage_buffers)
+            for (const spirv_cross::Resource& resource : shader_resources.storage_buffers)
             {
-                DescriptorInfo info   = reflect_descriptor(compiler, resource);
-                info.vkDescriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                descriptorInfos.insert({info.binding, info});
+                DescriptorInfo info     = ReflectDescriptor(compiler, resource);
+                info.vk_descriptor_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                descriptor_infos.insert({info.binding, info});
             }
         }
 
-        DescriptorInfo reflect_descriptor(
+        DescriptorInfo ReflectDescriptor(
             const spirv_cross::CompilerReflection& compiler, const spirv_cross::Resource& resource)
         {
-            const spirv_cross::SPIRType& descriptorType = compiler.get_type(resource.type_id);
+            const spirv_cross::SPIRType& descriptor_type = compiler.get_type(resource.type_id);
             uint32_t set        = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
             DescriptorInfo info = {};
             info.binding        = compiler.get_decoration(resource.id, spv::DecorationBinding);
             info.count          = 1;  // TODO: need a fix for array
             info.set            = set;
-            info.stages         = getVulkanShaderType(type);
+            info.stages         = GetVulkanShaderType(type);
             return info;
         }
 
-        static ShaderType getShaderType(const std::filesystem::path& FilePath)
+        static ShaderType GetShaderType(const std::filesystem::path& FilePath)
         {
             std::string extension                   = FilePath.filename().extension().string();
             std::map<std::string, ShaderType> table = {
-                {".vert", Vertex},
-                {".frag", Fragment},
-                {".geom", Geometry},
-                {".comp", Compute},
+                {".vert", kVertex},
+                {".frag", kFragment},
+                {".geom", kGeometry},
+                {".comp", kCompute},
             };
             if (table.count(extension) == 0)
             {
@@ -257,15 +263,15 @@ namespace dhh::shader
             return table[extension];
         }
 
-        static shaderc_shader_kind getShadercShaderType(ShaderType Type)
+        static shaderc_shader_kind GetShadercShaderType(ShaderType Type)
         {
-            shaderc_shader_kind Table[] = {
+            shaderc_shader_kind table[] = {
                 shaderc_glsl_vertex_shader,
                 shaderc_glsl_geometry_shader,
                 shaderc_glsl_fragment_shader,
                 shaderc_glsl_compute_shader,
             };
-            return Table[Type];
+            return table[Type];
         }
     };
 }

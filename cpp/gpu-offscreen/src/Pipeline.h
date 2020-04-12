@@ -15,16 +15,16 @@ namespace dhh::shader
         std::vector<Shader*> shaders;
 
         explicit Pipeline(VkDevice device, Shader* shader, VkDescriptorPool pool)
-            : device(device), shaders({shader}), descriptorPool(pool)
+            : device_(device), shaders({shader}), descriptorPool_(pool)
         {
-            isComputePipeline = true;
-            createShaderModules();
-            createShaderStageCreateInfos();
-            gatherDescriptorInfo();
-            createDescriptorSetLayouts();
-            createPipelineLayout();
-            createComputePipeline();
-            allocateDescriptorSets();
+            is_compute_pipeline = true;
+            CreateShaderModules();
+            CreateShaderStageCreateInfos();
+            GatherDescriptorInfo();
+            CreateDescriptorSetLayouts();
+            CreatePipelineLayout();
+            CreateComputePipeline();
+            AllocateDescriptorSets();
         }
 
 
@@ -34,159 +34,159 @@ namespace dhh::shader
             VkPipelineDepthStencilStateCreateInfo depthStencilState, VkPipelineViewportStateCreateInfo viewportState,
             VkPipelineColorBlendAttachmentState colorBlendAttachmentState,
             VkPipelineInputAssemblyStateCreateInfo inputAssemblyState)
-            : device(device), shaders(shaders), descriptorPool(pool), renderPass(renderPass),
-              multisampleState(multisampleState), dynamicStates(dynamicStates), rasterizationState(rasterizationState),
-              depthStencilState(depthStencilState), viewportState(viewportState),
-              colorBlendAttachmentState(colorBlendAttachmentState), inputAssemblyState(inputAssemblyState)
+            : device_(device), shaders(shaders), descriptorPool_(pool), renderPass_(renderPass),
+              multisample_state(multisampleState), dynamic_states(dynamicStates), rasterization_state(rasterizationState),
+              depth_stencil_state(depthStencilState), viewport_state(viewportState),
+              color_blend_attachment_state(colorBlendAttachmentState), input_assembly_state(inputAssemblyState)
 
         {
-            isComputePipeline = false;
-            validateGraphicsPipelineShaders();
-            getVertexInputInfos();
-            createShaderModules();
-            createShaderStageCreateInfos();
-            gatherDescriptorInfo();
-            createDescriptorSetLayouts();
-            createPipelineLayout();
-            createGraphicsPipeline();
-            allocateDescriptorSets();
+            is_compute_pipeline = false;
+            ValidateGraphicsPipelineShaders();
+            GetVertexInputInfos();
+            CreateShaderModules();
+            CreateShaderStageCreateInfos();
+            GatherDescriptorInfo();
+            CreateDescriptorSetLayouts();
+            CreatePipelineLayout();
+            CreateGraphicsPipeline();
+            AllocateDescriptorSets();
         }
 
-        VkPipelineMultisampleStateCreateInfo multisampleState;
-        std::vector<VkDynamicState> dynamicStates;
-        VkPipelineRasterizationStateCreateInfo rasterizationState;
-        VkPipelineDepthStencilStateCreateInfo depthStencilState;
-        VkPipelineViewportStateCreateInfo viewportState;
-        VkPipelineColorBlendAttachmentState colorBlendAttachmentState;
-        VkPipelineInputAssemblyStateCreateInfo inputAssemblyState;
+        VkPipelineMultisampleStateCreateInfo multisample_state;
+        std::vector<VkDynamicState> dynamic_states;
+        VkPipelineRasterizationStateCreateInfo rasterization_state;
+        VkPipelineDepthStencilStateCreateInfo depth_stencil_state;
+        VkPipelineViewportStateCreateInfo viewport_state;
+        VkPipelineColorBlendAttachmentState color_blend_attachment_state;
+        VkPipelineInputAssemblyStateCreateInfo input_assembly_state;
 
-        void createComputePipeline()
+        void CreateComputePipeline()
         {
-            VkComputePipelineCreateInfo pipelineInfo =
-                dhh::vk::initializer::computePipelineCreateInfo(shaderStageCreateInfos[0], pipelineLayout);
-            vkCreateComputePipelines(device, 0, 1, &pipelineInfo, nullptr, &pipeline);
+            VkComputePipelineCreateInfo pipeline_info =
+                dhh::vk::initializer::ComputePipelineCreateInfo(shader_stage_create_infos[0], pipeline_layout);
+            vkCreateComputePipelines(device_, 0, 1, &pipeline_info, nullptr, &pipeline);
         }
 
-        void createGraphicsPipeline()
+        void CreateGraphicsPipeline()
         {
-            VkPipelineDynamicStateCreateInfo dynamicStateInfo =
-                dhh::vk::initializer::pipelineDynamicStateCreateInfo(dynamicStates);
+            VkPipelineDynamicStateCreateInfo dynamic_state_info =
+                dhh::vk::initializer::PipelineDynamicStateCreateInfo(dynamic_states);
 
 
-            VkPipelineColorBlendStateCreateInfo colorBlendInfo =
-                dhh::vk::initializer::pipelineColorBlendStateCreateInfo(colorBlendAttachmentState);
+            VkPipelineColorBlendStateCreateInfo color_blend_info =
+                dhh::vk::initializer::PipelineColorBlendStateCreateInfo(color_blend_attachment_state);
 
-            VkPipelineVertexInputStateCreateInfo vertexInputInfo =
-                dhh::vk::initializer::pipelineVertexInputStateCreateInfo(
-                    vertexInputBindingDescriptions, vertexInputAttributeDescriptions);
+            VkPipelineVertexInputStateCreateInfo vertex_input_info =
+                dhh::vk::initializer::PipelineVertexInputStateCreateInfo(
+                    vertex_input_binding_descriptions, vertex_input_attribute_descriptions);
 
-            VkGraphicsPipelineCreateInfo pipelineInfo =
-                dhh::vk::initializer::graphicsPipelineCreateInfo(shaderStageCreateInfos, renderPass, pipelineLayout);
-            pipelineInfo.pRasterizationState = &rasterizationState;
-            pipelineInfo.pDynamicState       = &dynamicStateInfo;
-            pipelineInfo.pMultisampleState   = &multisampleState;
-            pipelineInfo.pViewportState      = &viewportState;
-            pipelineInfo.pColorBlendState    = &colorBlendInfo;
-            pipelineInfo.pDepthStencilState  = &depthStencilState;
-            pipelineInfo.pInputAssemblyState = &inputAssemblyState;
-            pipelineInfo.pVertexInputState   = &vertexInputInfo;
-            vkCreateGraphicsPipelines(device, 0, 1, &pipelineInfo, NULL, &pipeline);
+            VkGraphicsPipelineCreateInfo pipeline_info =
+                dhh::vk::initializer::GraphicsPipelineCreateInfo(shader_stage_create_infos, renderPass_, pipeline_layout);
+            pipeline_info.pRasterizationState = &rasterization_state;
+            pipeline_info.pDynamicState       = &dynamic_state_info;
+            pipeline_info.pMultisampleState   = &multisample_state;
+            pipeline_info.pViewportState      = &viewport_state;
+            pipeline_info.pColorBlendState    = &color_blend_info;
+            pipeline_info.pDepthStencilState  = &depth_stencil_state;
+            pipeline_info.pInputAssemblyState = &input_assembly_state;
+            pipeline_info.pVertexInputState   = &vertex_input_info;
+            vkCreateGraphicsPipelines(device_, 0, 1, &pipeline_info, NULL, &pipeline);
         }
 
-        void getVertexInputInfos()
+        void GetVertexInputInfos()
         {
             for (const auto& shader : shaders)
             {
-                if (shader->type == Vertex)
+                if (shader->type == kVertex)
                 {
-                    vertexInputBindingDescriptions   = shader->getVertexInputBindingDescription();
-                    vertexInputAttributeDescriptions = shader->getVertexInputAttributeDescriptions();
+                    vertex_input_binding_descriptions   = shader->GetVertexInputBindingDescription();
+                    vertex_input_attribute_descriptions = shader->GetVertexInputAttributeDescriptions();
                 }
             }
         }
 
-        void createShaderStageCreateInfos()
+        void CreateShaderStageCreateInfos()
         {
             for (const auto& shader : shaders)
             {
-                shaderStageCreateInfos.push_back(shader->getPipelineShaderStageCreateInfo(shaderModules[shader->type]));
+                shader_stage_create_infos.push_back(shader->GetPipelineShaderStageCreateInfo(shader_modules[shader->type]));
             }
         }
 
-        void createShaderModules()
+        void CreateShaderModules()
         {
             for (const auto& shader : shaders)
             {
-                shaderModules[shader->type] = shader->createVulkanShaderModule(device);
+                shader_modules[shader->type] = shader->CreateVulkanShaderModule(device_);
             }
         }
 
-        void createPipelineLayout()
+        void CreatePipelineLayout()
         {
             VkPipelineLayoutCreateInfo info = {};
             info.sType                      = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-            info.setLayoutCount             = descriptorSetLayouts.size();
-            info.pSetLayouts                = descriptorSetLayouts.data();
+            info.setLayoutCount             = descriptor_set_layouts.size();
+            info.pSetLayouts                = descriptor_set_layouts.data();
 
-            vkCreatePipelineLayout(device, &info, nullptr, &pipelineLayout);
+            vkCreatePipelineLayout(device_, &info, nullptr, &pipeline_layout);
         }
 
         // descriptor sets index by swapchain id
-        void allocateDescriptorSets()
+        void AllocateDescriptorSets()
         {
-            descriptorSets.resize(descriptorSetLayouts.size());
-            VkDescriptorSetAllocateInfo allocateInfo = {};
-            allocateInfo.sType                       = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-            allocateInfo.descriptorPool              = descriptorPool;
-            allocateInfo.descriptorSetCount          = descriptorSetLayouts.size();
-            allocateInfo.pSetLayouts                 = descriptorSetLayouts.data();
-            VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &allocateInfo, descriptorSets.data()));
+            descriptor_sets.resize(descriptor_set_layouts.size());
+            VkDescriptorSetAllocateInfo allocate_info = {};
+            allocate_info.sType                       = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            allocate_info.descriptorPool              = descriptorPool_;
+            allocate_info.descriptorSetCount          = descriptor_set_layouts.size();
+            allocate_info.pSetLayouts                 = descriptor_set_layouts.data();
+            VK_CHECK_RESULT(vkAllocateDescriptorSets(device_, &allocate_info, descriptor_sets.data()));
         }
 
-        void createDescriptorSetLayouts()
+        void CreateDescriptorSetLayouts()
         {
             // iterate descriptor group in one set, create decriptor set layout
-            for (const auto& bindingsInSet : bindings)
+            for (const auto& bindings_in_set : bindings_)
             {
                 VkDescriptorSetLayoutCreateInfo info = {};
                 info.sType                           = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-                info.bindingCount                    = bindingsInSet.second.size();
-                info.pBindings                       = bindingsInSet.second.data();
-                VkDescriptorSetLayout setLayout;
+                info.bindingCount                    = bindings_in_set.second.size();
+                info.pBindings                       = bindings_in_set.second.data();
+                VkDescriptorSetLayout set_layout;
 
-                vkCreateDescriptorSetLayout(device, &info, nullptr, &setLayout);
+                vkCreateDescriptorSetLayout(device_, &info, nullptr, &set_layout);
 
-                descriptorSetLayouts.push_back(setLayout);
+                descriptor_set_layouts.push_back(set_layout);
             }
         }
 
     public:
-        std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
-        std::vector<VkDescriptorSet> descriptorSets;
-        VkPipelineLayout pipelineLayout;
-        std::map<ShaderType, VkShaderModule> shaderModules;
-        std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos;
-        std::vector<VkVertexInputBindingDescription> vertexInputBindingDescriptions;
-        std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions;
+        std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
+        std::vector<VkDescriptorSet> descriptor_sets;
+        VkPipelineLayout pipeline_layout;
+        std::map<ShaderType, VkShaderModule> shader_modules;
+        std::vector<VkPipelineShaderStageCreateInfo> shader_stage_create_infos;
+        std::vector<VkVertexInputBindingDescription> vertex_input_binding_descriptions;
+        std::vector<VkVertexInputAttributeDescription> vertex_input_attribute_descriptions;
         VkPipeline pipeline;
-        bool isComputePipeline;
+        bool is_compute_pipeline;
 
 
     private:
-        std::map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> bindings;  // map<set id, bindings group>
-        VkDevice device;
-        VkDescriptorPool descriptorPool;
-        VkRenderPass renderPass;
+        std::map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> bindings_;  // map<set id, bindings group>
+        VkDevice device_;
+        VkDescriptorPool descriptorPool_;
+        VkRenderPass renderPass_;
 
         /// A pipeline can only have at most one vertex shader or fragment shader, etc.
-        void validateGraphicsPipelineShaders()
+        void ValidateGraphicsPipelineShaders()
         {
-            uint32_t typeCounts[sizeof(ShaderType)] = {0};
+            uint32_t type_counts[sizeof(ShaderType)] = {0};
             for (const auto& shader : shaders)
             {
-                typeCounts[shader->type]++;
+                type_counts[shader->type]++;
             }
-            for (auto count : typeCounts)
+            for (auto count : type_counts)
             {
                 if (count < 0 || count > 1)
                 {
@@ -195,33 +195,33 @@ namespace dhh::shader
             }
         }
 
-        void gatherDescriptorInfo()
+        void GatherDescriptorInfo()
         {
             // merge binding infos from different shaders
-            std::map<uint32_t, DescriptorInfo> infoMerged;  // map<binding, info>
+            std::map<uint32_t, DescriptorInfo> info_merged;  // map<binding, info>
             for (const auto& shader : shaders)
             {
-                for (const auto& info : shader->descriptorInfos)
+                for (const auto& info : shader->descriptor_infos)
                 {
-                    if (infoMerged.find(info.first) != infoMerged.end())
+                    if (info_merged.find(info.first) != info_merged.end())
                     {
-                        infoMerged[info.first].stages = (infoMerged[info.first].stages | info.second.stages);
+                        info_merged[info.first].stages = (info_merged[info.first].stages | info.second.stages);
                     }
                     else
                     {
-                        infoMerged.insert({info.second.binding, info.second});
+                        info_merged.insert({info.second.binding, info.second});
                     }
                 }
             }
 
-            for (const auto& info : infoMerged)
+            for (const auto& info : info_merged)
             {
                 VkDescriptorSetLayoutBinding binding = {};
                 binding.binding                      = info.second.binding;
                 binding.descriptorCount              = info.second.count;
-                binding.descriptorType               = info.second.vkDescriptorType;
+                binding.descriptorType               = info.second.vk_descriptor_type;
                 binding.stageFlags                   = info.second.stages;
-                bindings[info.second.set].push_back(binding);
+                bindings_[info.second.set].push_back(binding);
             }
         }
     };

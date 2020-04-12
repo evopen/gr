@@ -17,7 +17,7 @@ find_library(SHADERC_LIBRARY shaderc_combined)
 link_libraries(${SHADERC_LIBRARY})
 
 set(MAIN_TARGET ${PROJECT_NAME})
-add_executable(${MAIN_TARGET} "gpu-offscreen.cpp" "pch.h" "VulkanBase.cpp")
+add_executable(${MAIN_TARGET} "gpu-offscreen.cpp" "pch.h" "VulkanBase.cpp" "base/VulkanTools.cpp")
 
 #set_target_properties(${MAIN_TARGET} PROPERTIES UNITY_BUILD ON)
 target_precompile_headers(${MAIN_TARGET} PRIVATE pch.h)

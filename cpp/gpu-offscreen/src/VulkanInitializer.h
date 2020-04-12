@@ -4,9 +4,9 @@
 
 #include <vector>
 
-namespace dhh::vk::initializer
+namespace dhh::initializer
 {
-    inline VkRenderPassBeginInfo renderPassBeginInfo(const std::vector<VkClearValue>& clearValues,
+    inline VkRenderPassBeginInfo RenderPassBeginInfo(const std::vector<VkClearValue>& clearValues,
         VkFramebuffer framebuffer, VkRenderPass renderPass, uint32_t width, uint32_t height)
     {
         VkRenderPassBeginInfo info    = {};
@@ -23,7 +23,7 @@ namespace dhh::vk::initializer
     }
 
 
-    inline VkPipelineRasterizationStateCreateInfo pipelineRasterizationStateCreateInfo(
+    inline VkPipelineRasterizationStateCreateInfo PipelineRasterizationStateCreateInfo(
         VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace)
     {
         VkPipelineRasterizationStateCreateInfo info = {};
@@ -38,7 +38,7 @@ namespace dhh::vk::initializer
         return info;
     }
 
-    inline VkCommandBufferBeginInfo commandBufferBeginInfo(
+    inline VkCommandBufferBeginInfo CommandBufferBeginInfo(
         VkCommandBufferUsageFlagBits flags = (VkCommandBufferUsageFlagBits) 0)
     {
         VkCommandBufferBeginInfo info = {};
@@ -47,7 +47,7 @@ namespace dhh::vk::initializer
         return info;
     }
 
-    inline VkWriteDescriptorSet writeDescriptorSet(VkDescriptorType type, uint32_t count, uint32_t binding,
+    inline VkWriteDescriptorSet WriteDescriptorSet(VkDescriptorType type, uint32_t count, uint32_t binding,
         VkDescriptorSet set, VkDescriptorBufferInfo* bufferInfo)
     {
         VkWriteDescriptorSet info = {};
@@ -60,7 +60,7 @@ namespace dhh::vk::initializer
         return info;
     }
 
-    inline VkWriteDescriptorSet writeDescriptorSet(
+    inline VkWriteDescriptorSet WriteDescriptorSet(
         VkDescriptorType type, uint32_t count, uint32_t binding, VkDescriptorSet set, VkDescriptorImageInfo* imageInfo)
     {
         VkWriteDescriptorSet info = {};
@@ -73,7 +73,7 @@ namespace dhh::vk::initializer
         return info;
     }
 
-    inline VkCommandBufferAllocateInfo commandBufferAllocateInfo(
+    inline VkCommandBufferAllocateInfo CommandBufferAllocateInfo(
         VkCommandPool pool, uint32_t count, VkCommandBufferLevel level)
     {
         VkCommandBufferAllocateInfo info = {};
@@ -85,7 +85,7 @@ namespace dhh::vk::initializer
     }
 
 
-    inline VkPipelineDepthStencilStateCreateInfo pipelineDepthStencilStateCreateInfo(
+    inline VkPipelineDepthStencilStateCreateInfo PipelineDepthStencilStateCreateInfo(
         VkBool32 depthTestEnable, VkBool32 depthWriteEnable, VkCompareOp depthCompareOp)
     {
         VkPipelineDepthStencilStateCreateInfo info = {};
@@ -96,7 +96,7 @@ namespace dhh::vk::initializer
         return info;
     }
 
-    inline VkPipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo(VkSampleCountFlagBits samples)
+    inline VkPipelineMultisampleStateCreateInfo PipelineMultisampleStateCreateInfo(VkSampleCountFlagBits samples)
     {
         VkPipelineMultisampleStateCreateInfo info = {};
         info.sType                                = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -104,7 +104,7 @@ namespace dhh::vk::initializer
         return info;
     }
 
-    inline VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo(
+    inline VkPipelineDynamicStateCreateInfo PipelineDynamicStateCreateInfo(
         const std::vector<VkDynamicState>& dynamicStates)
     {
         VkPipelineDynamicStateCreateInfo info = {};
@@ -114,7 +114,7 @@ namespace dhh::vk::initializer
         return info;
     }
 
-    inline VkPipelineColorBlendAttachmentState pipelineColorBlendAttachmentState(
+    inline VkPipelineColorBlendAttachmentState PipelineColorBlendAttachmentState(
         VkColorComponentFlags colorWriteMask, VkBool32 blendEnable)
     {
         VkPipelineColorBlendAttachmentState info = {};
@@ -123,7 +123,7 @@ namespace dhh::vk::initializer
         return info;
     }
 
-    inline VkPipelineInputAssemblyStateCreateInfo pipelineInputAssemblyStateCreateInfo(VkPrimitiveTopology topology)
+    inline VkPipelineInputAssemblyStateCreateInfo PipelineInputAssemblyStateCreateInfo(VkPrimitiveTopology topology)
     {
         VkPipelineInputAssemblyStateCreateInfo info = {};
         info.sType                                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -131,7 +131,7 @@ namespace dhh::vk::initializer
         return info;
     }
 
-    inline VkPipelineViewportStateCreateInfo pipelineViewportStateCreateInfo(
+    inline VkPipelineViewportStateCreateInfo PipelineViewportStateCreateInfo(
         uint32_t scissorCount, uint32_t viewportCount)
     {
         VkPipelineViewportStateCreateInfo info = {};
@@ -141,7 +141,7 @@ namespace dhh::vk::initializer
         return info;
     }
 
-    inline VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo(
+    inline VkPipelineVertexInputStateCreateInfo PipelineVertexInputStateCreateInfo(
         const std::vector<VkVertexInputBindingDescription>& bindingDescriptions,
         const std::vector<VkVertexInputAttributeDescription>& attributeDescriptions)
     {
@@ -154,21 +154,30 @@ namespace dhh::vk::initializer
         return info;
     }
 
-    inline VkFenceCreateInfo fenceCreateInfo()
+    inline VkFenceCreateInfo FenceCreateInfo()
     {
         VkFenceCreateInfo info = {};
         info.sType             = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         return info;
     }
 
-    inline VkSemaphoreCreateInfo semaphoreCreateInfo()
+    inline VkSemaphoreCreateInfo SemaphoreCreateInfo()
     {
         VkSemaphoreCreateInfo info = {};
         info.sType                 = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
         return info;
     }
 
-    inline VkDescriptorBufferInfo descriptorBufferInfo(VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range)
+    inline VkDescriptorImageInfo DescriptorImageInfo(VkImageView image_view, VkImageLayout layout, VkSampler sampler)
+    {
+        VkDescriptorImageInfo info = {};
+        info.imageView             = image_view;
+        info.imageLayout           = layout;
+        info.sampler               = sampler;
+        return info;
+    }
+
+    inline VkDescriptorBufferInfo DescriptorBufferInfo(VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range)
     {
         VkDescriptorBufferInfo info = {};
         info.buffer                 = buffer;
@@ -177,7 +186,7 @@ namespace dhh::vk::initializer
         return info;
     }
 
-    inline VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo(
+    inline VkGraphicsPipelineCreateInfo GraphicsPipelineCreateInfo(
         const std::vector<VkPipelineShaderStageCreateInfo>& stages, VkRenderPass renderPass, VkPipelineLayout layout)
     {
         VkGraphicsPipelineCreateInfo info = {};
@@ -189,7 +198,7 @@ namespace dhh::vk::initializer
         return info;
     }
 
-    inline VkComputePipelineCreateInfo computePipelineCreateInfo(
+    inline VkComputePipelineCreateInfo ComputePipelineCreateInfo(
         VkPipelineShaderStageCreateInfo stage, VkPipelineLayout layout)
     {
         VkComputePipelineCreateInfo info = {};
@@ -199,7 +208,7 @@ namespace dhh::vk::initializer
         return info;
     }
 
-    inline VkPipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo(
+    inline VkPipelineColorBlendStateCreateInfo PipelineColorBlendStateCreateInfo(
         std::vector<VkPipelineColorBlendAttachmentState>& attachments)
     {
         VkPipelineColorBlendStateCreateInfo info = {};
@@ -209,7 +218,7 @@ namespace dhh::vk::initializer
         return info;
     }
 
-    inline VkPipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo(
+    inline VkPipelineColorBlendStateCreateInfo PipelineColorBlendStateCreateInfo(
         VkPipelineColorBlendAttachmentState& attachments, uint32_t attachmentCount = 1)
     {
         VkPipelineColorBlendStateCreateInfo info = {};
@@ -219,7 +228,7 @@ namespace dhh::vk::initializer
         return info;
     }
 
-    inline VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo(
+    inline VkPipelineLayoutCreateInfo PipelineLayoutCreateInfo(
         VkDescriptorSetLayout& setLayout, uint32_t setLayoutCount = 1)
     {
         VkPipelineLayoutCreateInfo info = {};
