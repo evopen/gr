@@ -57,6 +57,7 @@ link_libraries(${AVDEVICE_LIBRARY}
 
 # Include sub-projects.
 add_subdirectory ("offline")
+add_subdirectory ("gpu-offscreen")
 
 #include_directories(${VCPKG_INCLUDE_DIR})
 #message(${VCPKG_INCLUDE_DIR})
