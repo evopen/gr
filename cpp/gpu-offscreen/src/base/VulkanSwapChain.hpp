@@ -141,7 +141,7 @@ public:
 
 		// Get available queue family properties
 		uint32_t queueCount;
-		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueCount, NULL);
+		vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueCount, nullptr);
 		assert(queueCount >= 1);
 
 		std::vector<VkQueueFamilyProperties> queueProps(queueCount);

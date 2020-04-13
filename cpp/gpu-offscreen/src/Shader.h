@@ -169,7 +169,7 @@ namespace dhh::shader
         std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions_;
         size_t stageInputSize_;
 
-        std::vector<uint32_t> Compile(bool optimize = false)
+        std::vector<uint32_t> Compile(bool optimize = true)
         {
             shaderc::Compiler compiler;
             shaderc::CompileOptions options;

@@ -1,32 +1,298 @@
 #version 450
 
-layout (constant_id = 0) const int WIDTH = 4;
-layout (constant_id = 1) const int HEIGHT = 4;
+#define M_PI 3.1415926535897932384626433832795
 
-layout (local_size_x = 4, local_size_y = 4, local_size_z = 1) in;
+
+layout (constant_id = 0) const int HEIGHT = 100;
+layout (constant_id = 1) const int WIDTH = 100;
+
+layout (local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 
 layout (binding = 0) uniform samplerCube skybox;
 
 layout (set = 0, binding = 1) uniform object_info {
-	vec3 camera_pos;
-	vec3 bh_pos;
+	dvec3 camera_pos;
+	dvec3 bh_position;
 };
+
+#define texture_resolution 20
+
+struct {
+    dvec3 position;
+    double disk_outer;
+    double disk_inner;
+    dvec3 disk_texture[texture_resolution];
+} bh;
+
+struct {
+    dvec3 position;
+} cam;
 
 
 layout (binding = 2) buffer readonly coord_buf {
-	vec3 coords[];
+	dvec3 coords[];
 };
 
 layout (binding = 3, rgba8) uniform image2D result_image;
 
+dvec3 GetTexCoord(uint row, uint col, int width, int height)
+{
+    double z = -1;
+    double x = double(col) / (width - 1) * (1 - (-1)) - 1;
+    double y = double(height - row - 1) / (height - 1) * (1 - (-1)) - 1;
+    return dvec3(x,y,z);
+}
+
+double GetCosAngle(dvec3 v1, dvec3 v2)
+{
+    return dot(v1, v2) / (length(v1) * length(v2));
+}
+
+double CalculateImpactParameter(double theta, double r)
+{
+    return r * sin(float(theta)) / sqrt(1 - 2 / r);
+}
+
+double Geodesic(double r, double b)
+{
+    return 1 / (r * r * sqrt(1 / (b * b) - 1 / (r * r) + 2 / (r * r * r)));
+}
+
+double ode23(double x0, double x1, double h, double b)
+{
+    double tolerance = 1e-7;
+    double y         = 0;
+    bool negative    = false;
+    if (x0 > x1)
+    {
+        double temp = x1;
+        x1 = x0;
+        x0 = temp;
+        negative = true;
+    }
+    while (x0 < x1)
+    {
+        double k1 = Geodesic(x0, b);
+        double k2 = Geodesic(x0 + h / 2, b);
+        double k3 = Geodesic(x0 + h * 0.75, b);
+
+        double x_next = x0 + h;
+        double y_next = y + (2 * k1 + 3 * k2 + 4 * k3) / 9 * h;
+
+        double k4    = Geodesic(x0 + h, b);
+        double error = abs(-5 * k1 + 6 * k2 + 8 * k3 - 9 * k4) / 72 * h;
+
+        h = h * min(max(sqrt(tolerance / (2 * error)), 0.3), 2.0);
+        if (error > tolerance)
+        {
+            continue;
+        }
+        else
+        {
+            y  = y_next;
+            x0 = x_next;
+        }
+    }
+
+    return negative ? -y : y;
+}
+
+mat4 RotationMatrix(dvec3 axis, double angle)
+{
+    axis = normalize(axis);
+    double s = sin(float(angle));
+    double c = cos(float(angle));
+    double oc = 1.0 - c;
+    
+    return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
+                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+                0.0,                                0.0,                                0.0,                                1.0);
+}
+
+dvec3 rotate(dvec3 position, double angle, dvec3 axis)
+{
+    return dvec3(RotationMatrix(axis, angle) * vec4(position, 0.f));
+}
+
+dvec3 DiskSampler(dvec3 start_pos, double b, double r0, double r1, dvec3 rotation_axis)
+{
+    int direction = 0;
+    if (r0 < r1)
+    {
+        direction = 1;
+    }
+    else
+    {
+        direction = -1;
+    }
+    start_pos = start_pos / length(start_pos) * r0;
+    double step_size;
+    dvec3 pos_near_disk = start_pos;
+    dvec3 pos           = start_pos;
+
+    double r = r0;
+
+    while (true)
+    {
+        dvec3 last_pos = pos;
+        if (abs(pos[1]) < abs(pos_near_disk[1]))
+        {
+            pos_near_disk = pos;
+        }
+        step_size = max(abs(pos.y) * 0.1, 0.01);
+        r += direction * step_size;
+        if (r * direction > r1 * direction)
+            break;
+        double dphi = ode23(r0, r, 0.001, b);
+        pos         = rotate(start_pos, abs(dphi), rotation_axis);
+        pos         = pos / length(pos) * r;
+        if (pos[1] * last_pos[1] < 0)
+            break;
+    }
+    double dr = length(pos_near_disk) - bh.disk_inner;
+
+    int sample_index = int(dr / (bh.disk_outer - bh.disk_inner) * (texture_resolution - 1));
+
+    return bh.disk_texture[sample_index];
+}
+
+double r3(double r, double b)
+{
+    return r / sqrt(1 - 2 / r) - b;
+}
+
+double FindClosestApproach3(double r0, double b)
+{
+    double head      = 3;
+    double tail      = r0;
+    double tolerance = 1e-9;
+
+    double m;
+
+    while (true)
+    {
+        m = (head + tail) / 2;
+        if ((tail - head) / 2 < tolerance)
+        {
+            break;
+        }
+        if (r3(head, b) * r3(m, b) > 0)
+        {
+            head = m;
+        }
+        else
+        {
+            tail = m;
+        }
+    }
+    return m + 1e-3;
+}
+
+
+
+dvec3 Trace(dvec3 tex_coord)
+{
+    dvec3 bh_dir        = bh.position - cam.position;
+    dvec3 rotation_axis = normalize(cross(tex_coord, bh_dir));
+    double cos_theta         = GetCosAngle(tex_coord, bh_dir);
+    double theta             = acos(float(cos_theta));
+    double r0                = length(cam.position);
+    double b                 = CalculateImpactParameter(theta, r0);
+    double ode23_end     = 2000;
+
+    if (b < sqrt(27))
+    {
+        // Debug
+        // return dvec3(1, 1, 1);
+
+        double dphi                 = ode23(r0, bh.disk_outer, 0.001, b);  /// here
+        dvec3 photon_pos_start = rotate(cam.position, -dphi, rotation_axis);
+        double dphi_in_disk         = ode23(bh.disk_outer, bh.disk_inner, 0.001, b);
+        dphi                        = dphi + dphi_in_disk;
+        dvec3 photon_pos_end   = rotate(cam.position, -dphi, rotation_axis);
+
+        if (abs(dphi_in_disk) > M_PI || photon_pos_start[1] * photon_pos_end[1] < 0)
+        {
+            return DiskSampler(photon_pos_start, b, bh.disk_outer, bh.disk_inner, rotation_axis);
+        }
+        return dvec3(0, 0, 0);
+    }
+else
+    {
+        double r3 = FindClosestApproach3(r0, b);
+        if (r3 > bh.disk_outer)
+        {
+            // Debug
+            // return vec3(0, 0, 1);
+
+            double dphi = ode23(r0, r3, 0.001, b) - ode23(r3, ode23_end, 0.001, b);
+
+            dvec3 distort_coord = rotate(cam.position, -dphi, rotation_axis);
+            return vec3(texture(skybox, vec3(distort_coord)));
+        }
+        else
+        {
+            double dphi                 = ode23(r0, bh.disk_outer, 0.001, b);
+            dvec3 photon_pos_start = rotate(cam.position, -dphi, rotation_axis);
+
+            if (r3 < bh.disk_inner)  // TODO:later
+            {
+            }
+            else
+            {
+                double dphi_in_disk       = ode23(bh.disk_outer, r3, 0.001, b);
+                double old_dphi           = dphi;
+                dphi                      = dphi + dphi_in_disk;
+                dvec3 photon_pos_end = rotate(cam.position, -dphi, rotation_axis);
+
+                if (abs(dphi_in_disk) > M_PI || photon_pos_start[1] * photon_pos_end[1] < 0)
+                {
+                    return DiskSampler(photon_pos_start, b, bh.disk_outer, r3, rotation_axis);
+                }
+                photon_pos_start = photon_pos_end;
+                dphi_in_disk     = ode23(r3, bh.disk_outer, 0.001, b);
+                dphi             = dphi - dphi_in_disk;
+                photon_pos_end   = rotate(cam.position, -dphi, rotation_axis);
+                if (abs(dphi_in_disk) > M_PI || photon_pos_start[1] * photon_pos_end[1] < 0)
+                {
+                    return DiskSampler(photon_pos_start, b, r3, bh.disk_outer, rotation_axis);
+                }
+
+                // not hit
+                dphi = dphi - ode23(bh.disk_outer, ode23_end, 0.001, b);
+                dvec3 distort_coord = rotate(cam.position, -dphi, rotation_axis);
+
+                return vec3(texture(skybox, vec3(distort_coord)));
+            }
+        }
+    }
+    
+    return dvec3(1, 0, 0);
+}
+
+void GenerateDiskTexture()
+{
+    for (int i = 0; i < texture_resolution; ++i)
+    {
+        bh.disk_texture[i] = dvec3(double(i) / texture_resolution, 1 - double(i) / texture_resolution, 0);
+    }
+}
+
 void main()
 {
+    bh.position = dvec3(0,0,0);
+    cam.position = dvec3(0,2,15);
+    bh.disk_inner = 2;
+    bh.disk_outer = 10;
+    GenerateDiskTexture();
+
+
 	uint row = gl_GlobalInvocationID.x;
 	uint col = gl_GlobalInvocationID.y;
-	if (row > 1 || col > 1)
+	if (row > HEIGHT || col > WIDTH)
 		return;
-
-	imageStore(result_image, ivec2(row,col), vec4(0.1,0,1,1));
-	barrier();
-	memoryBarrier();
+	dvec3 tex_coord = GetTexCoord(row, col, WIDTH, HEIGHT);
+	dvec3 color = Trace(tex_coord);
+	imageStore(result_image, ivec2(row,col), vec4(color,1));
 }

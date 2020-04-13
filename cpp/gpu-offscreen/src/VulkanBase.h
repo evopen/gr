@@ -121,14 +121,16 @@ protected:
         void* pUserData);
     std::vector<const char*> GetRequiredExtensions();
     std::vector<const char*> GetRequiredLayers();
-    VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlagBits aspectFlags, uint32_t mipLevels);
+    VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlagBits aspectFlags, uint32_t mipLevels,
+        VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_2D);
     VkSurfaceFormatKHR ChooseSurfaceFormat();
     void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, VkBuffer& buffer,
         VmaAllocation& allocation);
     void CreateImage(uint32_t width, uint32_t height, uint32_t mipLevelCount, VkSampleCountFlagBits sampleCount,
         VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage, VkImage& image,
-        VmaAllocation& allocation, uint32_t layers = 1);
-
-public:
+        VmaAllocation& allocation, uint32_t layers = 1, VkImageCreateFlags flags = VK_NULL_HANDLE);
+    VkCommandBuffer CreateCommandBuffer(VkCommandBufferLevel level, bool begin);
+    void FlushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free);
+ public:
     VkShaderModule CreateShaderModule(const std::string& filename);
 };

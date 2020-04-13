@@ -14,6 +14,14 @@ link_libraries(glfw)
 find_package(Vulkan REQUIRED)
 link_libraries(Vulkan::Vulkan)
 
+find_package(unofficial-vulkan-memory-allocator CONFIG REQUIRED)
+link_libraries(unofficial::vulkan-memory-allocator::vulkan-memory-allocator)
+
+add_subdirectory("external")
+
+include_directories("external/ktx/include")
+add_subdirectory("src/base")
+include_directories("src/base")
 
 add_subdirectory(${SOURCE_DIR})
 

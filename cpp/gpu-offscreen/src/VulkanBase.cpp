@@ -5,6 +5,8 @@
 #include "Shader.h"
 #include "VulkanInitializer.h"
 
+#include <VulkanTools.h>
+
 
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"
@@ -88,11 +90,11 @@ void VulkanBase::CreateInstance()
         debug_utils_messenger_create_info.messageSeverity =
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
         debug_utils_messenger_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
-                                                    | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT
-                                                    | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+                                                        | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT
+                                                        | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
         debug_utils_messenger_create_info.pUserData       = nullptr;
         debug_utils_messenger_create_info.pfnUserCallback = &DebugCallback;
-        instance_create_info.pNext                      = &debug_utils_messenger_create_info;
+        instance_create_info.pNext                        = &debug_utils_messenger_create_info;
     }
     else
     {
@@ -110,11 +112,12 @@ void VulkanBase::SetupDebugMessenger()
     debug_utils_messenger_create_info.messageSeverity =
         VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
     debug_utils_messenger_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
-                                                | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT
-                                                | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+                                                    | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT
+                                                    | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
     debug_utils_messenger_create_info.pfnUserCallback = &DebugCallback;
 
-    if (create_debug_utils_messenger(instance, &debug_utils_messenger_create_info, nullptr, &debugMessenger_) != VK_SUCCESS)
+    if (create_debug_utils_messenger(instance, &debug_utils_messenger_create_info, nullptr, &debugMessenger_)
+        != VK_SUCCESS)
     {
         throw std::runtime_error("failed to setup debug messenger");
     }
@@ -144,7 +147,7 @@ void VulkanBase::PickPhysicalDevice()
 
 void VulkanBase::CreateLogicalDevice()
 {
-    float queue_priority                  = 1.f;
+    float queue_priority                   = 1.f;
     std::set<uint32_t> unique_queue_family = {
         queue_family_index.graphics_family.value(),
         queue_family_index.present_family.value(),
@@ -166,7 +169,7 @@ void VulkanBase::CreateLogicalDevice()
     }
 
     VkPhysicalDeviceFeatures features = {};
-    features.shaderFloat64            = VK_FALSE;
+    features.shaderFloat64            = VK_TRUE;
     features.fillModeNonSolid         = VK_FALSE;
     VkDeviceCreateInfo device_create_info;
     device_create_info.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -409,7 +412,8 @@ VkPresentModeKHR VulkanBase::ChoosePresentMode()
     {
         return VK_PRESENT_MODE_MAILBOX_KHR;
     }
-    else if (std::find(available_modes.begin(), available_modes.end(), VK_PRESENT_MODE_FIFO_KHR) != available_modes.end())
+    else if (std::find(available_modes.begin(), available_modes.end(), VK_PRESENT_MODE_FIFO_KHR)
+             != available_modes.end())
     {
         return VK_PRESENT_MODE_FIFO_KHR;
     }
@@ -482,7 +486,7 @@ VkBool32 VulkanBase::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messag
 
 std::vector<const char*> VulkanBase::GetRequiredExtensions()
 {
-    uint32_t extension_count             = 0;
+    uint32_t extension_count              = 0;
     const char** glfw_required_extensions = glfwGetRequiredInstanceExtensions(&extension_count);
     std::vector<const char*> required_extensions(glfw_required_extensions, glfw_required_extensions + extension_count);
 
@@ -552,7 +556,7 @@ void VulkanBase::FindQueueFamilyIndex()
 }
 
 VkImageView VulkanBase::CreateImageView(
-    VkImage image, VkFormat format, VkImageAspectFlagBits aspectFlags, uint32_t mipLevels)
+    VkImage image, VkFormat format, VkImageAspectFlagBits aspectFlags, uint32_t mipLevels, VkImageViewType view_type)
 {
     VkImageViewCreateInfo view_create_info;
     view_create_info.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -563,7 +567,7 @@ VkImageView VulkanBase::CreateImageView(
     view_create_info.image                           = image;
     view_create_info.flags                           = VK_NULL_HANDLE;
     view_create_info.format                          = format;
-    view_create_info.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
+    view_create_info.viewType                        = view_type;
     view_create_info.subresourceRange.aspectMask     = aspectFlags;
     view_create_info.subresourceRange.baseArrayLayer = 0;
     view_create_info.subresourceRange.baseMipLevel   = 0;
@@ -606,7 +610,7 @@ void VulkanBase::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMe
 
 void VulkanBase::CreateImage(uint32_t width, uint32_t height, uint32_t mipLevelCount, VkSampleCountFlagBits sampleCount,
     VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VmaMemoryUsage memoryUsage, VkImage& image,
-    VmaAllocation& allocation, uint32_t layers)
+    VmaAllocation& allocation, uint32_t layers, VkImageCreateFlags flags)
 {
     VkImageCreateInfo image_create_info;
     image_create_info.sType                 = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -617,7 +621,7 @@ void VulkanBase::CreateImage(uint32_t width, uint32_t height, uint32_t mipLevelC
     image_create_info.extent.depth          = 1;
     image_create_info.mipLevels             = mipLevelCount;
     image_create_info.samples               = sampleCount;
-    image_create_info.flags                 = VK_NULL_HANDLE;
+    image_create_info.flags                 = flags;
     image_create_info.format                = format;
     image_create_info.tiling                = tiling;
     image_create_info.usage                 = usage;
@@ -635,7 +639,7 @@ void VulkanBase::CreateImage(uint32_t width, uint32_t height, uint32_t mipLevelC
 
 VkShaderModule VulkanBase::CreateShaderModule(const std::string& filename)
 {
-    const std::vector<char>& code       = dhh::filesystem::LoadFile(filename, true);
+    const std::vector<char>& code        = dhh::filesystem::LoadFile(filename, true);
     VkShaderModuleCreateInfo create_info = {};
     create_info.sType                    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     create_info.codeSize                 = code.size();
@@ -648,4 +652,38 @@ VkShaderModule VulkanBase::CreateShaderModule(const std::string& filename)
     }
 
     return shader_module;
+}
+
+VkCommandBuffer VulkanBase::CreateCommandBuffer(VkCommandBufferLevel level, bool begin)
+{
+    VkCommandBuffer cmd_buf;
+    VkCommandBufferAllocateInfo info = dhh::initializer::CommandBufferAllocateInfo(command_pool, 1, level);
+    vkAllocateCommandBuffers(device, &info, &cmd_buf);
+    VkCommandBufferBeginInfo beginInfo = dhh::initializer::CommandBufferBeginInfo();
+    if (begin)
+        vkBeginCommandBuffer(cmd_buf, &beginInfo);
+    return cmd_buf;
+}
+
+void VulkanBase::FlushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free)
+{
+    if (commandBuffer == VK_NULL_HANDLE)
+    {
+        return;
+    }
+
+    VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
+
+    VkSubmitInfo submitInfo       = {};
+    submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers    = &commandBuffer;
+
+    VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE));
+    VK_CHECK_RESULT(vkQueueWaitIdle(queue));
+
+    if (free)
+    {
+        vkFreeCommandBuffers(device, command_pool, 1, &commandBuffer);
+    }
 }
