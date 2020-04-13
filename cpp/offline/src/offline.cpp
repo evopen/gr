@@ -20,7 +20,7 @@ int main(int argc, char** argv)
         Skybox skybox;
         LoadSkybox("resource/starfield", skybox);
         Camera cam;
-        cam.position = glm::dvec3(1, 2, 15);
+        cam.position = glm::dvec3(0, 2, 15);
         cam.front    = glm::dvec3(0, 0, -1);
         Blackhole bh;
         bh.disk_inner = 2;

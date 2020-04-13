@@ -84,6 +84,39 @@ inline double FindClosestApproach2(double r0, double b)
     return (result.first + result.second) / 2 + 1e-7;
 }
 
+double r3(double r, double b)
+{
+    return r / std::sqrt(1 - 2 / r) - b;
+}
+
+inline double FindClosestApproach3(double r0, double b)
+{
+    double head      = 3;
+    double tail      = r0;
+    double tolerance = 1e-9;
+
+    double m;
+
+    while (true)
+    {
+        m = (head + tail) / 2;
+        if ((tail - head) / 2 < tolerance)
+        {
+            break;
+        }
+        if (r3(head, b) * r3(m, b) > 0)
+        {
+            head = m;
+        }
+        else
+        {
+            tail = m;
+        }
+    }
+
+    return m + 1e-3;
+}
+
 inline double Integrate(double r0, double r1, double b)
 {
     double dphi;
@@ -114,6 +147,56 @@ inline double Integrate(double r0, double r1, double b, gsl_integration_workspac
 }
 
 double ode23(double x0, double x1, double h, double b)
+{
+    double tolerance = 1e-7;
+    double y         = 0;
+    bool negative    = false;
+    if (x0 > x1)
+    {
+        std::swap(x0, x1);
+        negative = true;
+    }
+    while (x0 < x1)
+    {
+        double k1 = Geodesic(x0, b);
+        double k2 = Geodesic(x0 + h / 2, b);
+        double k3 = Geodesic(x0 + h * 0.75, b);
+
+        double x_next = x0 + h;
+        double y_next = y + (2 * k1 + 3 * k2 + 4 * k3) / 9 * h;
+
+        double k4    = Geodesic(x0 + h, b);
+        double error = std::abs(-5 * k1 + 6 * k2 + 8 * k3 - 9 * k4) / 72 * h;
+
+        double what = pow(error, 1 / 3);
+
+        double s;
+
+        if (error > tolerance * 5)
+        {
+            s = pow(error, 0.2);
+        }
+        else
+        {
+            s = 5.0;
+        }
+
+        h = h * s;
+        if (error > tolerance)
+        {
+            continue;
+        }
+        else
+        {
+            y  = y_next;
+            x0 = x_next;
+        }
+    }
+
+    return negative ? -y : y;
+}
+
+double ode45(double x0, double x1, double h, double b)
 {
     double tolerance = 1e-7;
     double y         = 0;
@@ -233,9 +316,7 @@ inline glm::dvec3 DiskSampler(glm::dvec3 start_pos, double b, double r0, double 
     double step_size;
     glm::dvec3 pos_near_disk = start_pos;
     glm::dvec3 pos           = start_pos;
-    double integrate_span    = std::abs(r0 - r1);
 
-    // int steps = int(integrate_span / step_size);
     double r = r0;
 
     while (true)
@@ -265,6 +346,24 @@ inline glm::dvec3 DiskSampler(glm::dvec3 start_pos, double b, double r0, double 
 inline double GetCosAngle(glm::dvec3 v1, glm::dvec3 v2)
 {
     return dot(v1, v2) / (length(v1) * length(v2));
+}
+
+glm::mat4 RotationMatrix(glm::vec3 axis, float angle)
+{
+    axis     = normalize(axis);
+    float s  = sin(angle);
+    float c  = cos(angle);
+    float oc = 1.0 - c;
+
+    return glm::mat4(oc * axis.x * axis.x + c, oc * axis.x * axis.y - axis.z * s, oc * axis.z * axis.x + axis.y * s,
+        0.0, oc * axis.x * axis.y + axis.z * s, oc * axis.y * axis.y + c, oc * axis.y * axis.z - axis.x * s, 0.0,
+        oc * axis.z * axis.x - axis.y * s, oc * axis.y * axis.z + axis.x * s, oc * axis.z * axis.z + c, 0.0, 0.0, 0.0,
+        0.0, 1.0);
+}
+
+glm::vec3 rotate(glm::vec3 position, float angle, glm::vec3 axis)
+{
+    return glm::vec3(RotationMatrix(axis, angle) * glm::vec4(position, 0.f));
 }
 
 inline glm::dvec3 Trace(

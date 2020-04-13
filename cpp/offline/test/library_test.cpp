@@ -21,11 +21,11 @@ TEST(LibraryTest, ClosestApproach1T)
     EXPECT_NEAR(FindClosestApproach1(20, std::sqrt(28)), 3.384042943260197, 1.0e-10);
 }
 
-// TEST(LibraryTest, ClosestApproach2T)
-//{
-//    EXPECT_NEAR(FindClosestApproach2(20, 10), 8.788850662499728, 1.0e-10);
-//    EXPECT_NEAR(FindClosestApproach2(20, std::sqrt(28)), 3.384042943260197, 1.0e-10);
-//}
+ TEST(LibraryTest, ClosestApproach3T)
+{
+    EXPECT_NEAR(FindClosestApproach3(20, 10), 8.788850662499728, 1.0e-3);
+    EXPECT_NEAR(FindClosestApproach3(20, std::sqrt(28)), 3.384042943260197, 1.0e-3);
+}
 
 TEST(LibraryTest, IntegrateT)
 {

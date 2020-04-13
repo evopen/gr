@@ -61,7 +61,16 @@ static void BM_ode23(benchmark::State& state)
 {
     for (auto _ : state)
     {
-        ode23(30, 20, 0.001, 10);
+        ode23(200, 10, 1, 10);
+    }
+}
+
+
+static void BM_ode45(benchmark::State& state)
+{
+    for (auto _ : state)
+    {
+        ode45(30, 20, 0.001, 10);
     }
 }
 
