@@ -32,7 +32,7 @@ inline void GenerateDiskTexture(Blackhole& bh)
     bh.disk_texture.resize(disk_resolution);
     for (int i = 0; i < bh.disk_texture.size(); ++i)
     {
-        bh.disk_texture[i] = {float(i) / disk_resolution, 1 - float(i) / disk_resolution, 0};
+        bh.disk_texture[i] = {0.8, float(i) / disk_resolution, 0};
     }
 }
 
@@ -235,7 +235,7 @@ double ode45(double x0, double x1, double h, double b)
 
 inline void LoadSkybox(std::filesystem::path dir, Skybox& skybox)
 {
-    skybox.front  = cv::imread((dir / "front.jpg").string());
+    skybox.front  = cv::imread((dir / "top.jpg").string());
     skybox.back   = cv::imread((dir / "back.jpg").string());
     skybox.top    = cv::imread((dir / "top.jpg").string());
     skybox.bottom = cv::imread((dir / "bottom.jpg").string());

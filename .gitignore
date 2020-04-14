@@ -12,7 +12,7 @@ gcov.xml
 # Visual Studio Test Reports
 TestResults/
 
-movie*.mp4
-raytraced.png
+*.mp4
 
 *.spv
+*.png
