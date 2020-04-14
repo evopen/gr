@@ -367,7 +367,7 @@ glm::vec3 rotate(glm::vec3 position, float angle, glm::vec3 axis)
 }
 
 inline glm::dvec3 Trace(glm::dvec3 tex_coord, const Blackhole& bh, glm::dvec3 cam_position, const Skybox& skybox,
-    glm::dvec3 tex_coord, const Blackhole& bh, const Camera& cam, const Skybox& skybox, gsl_integration_workspace* w)
+    gsl_integration_workspace* w, bool* bloom)
 {
     glm::dvec3 bh_dir        = bh.position - cam_position;
     glm::dvec3 rotation_axis = glm::normalize(glm::cross(tex_coord, bh_dir));
@@ -389,6 +389,7 @@ inline glm::dvec3 Trace(glm::dvec3 tex_coord, const Blackhole& bh, glm::dvec3 ca
 
         if (std::abs(dphi_in_disk) > pi<double>() || photon_pos_start[1] * photon_pos_end[1] < 0)
         {
+            *bloom = true;
             return DiskSampler(photon_pos_start, b, bh.disk_outer, bh.disk_inner, rotation_axis, bh, w);
         }
         return glm::dvec3(0, 0, 0);
@@ -413,34 +414,41 @@ inline glm::dvec3 Trace(glm::dvec3 tex_coord, const Blackhole& bh, glm::dvec3 ca
 
             if (r3 < bh.disk_inner)  // TODO:later
             {
+                double dphi_in_disk       = Integrate(bh.disk_outer, bh.disk_inner, b, w);
+                dphi                      = dphi + dphi_in_disk;
+                glm::dvec3 photon_pos_end = glm::rotate(cam_position, -dphi, rotation_axis);
+
+                if (std::abs(dphi_in_disk) > pi<double>() || photon_pos_start[1] * photon_pos_end[1] < 0)
+                {
+                    *bloom = true;
+                    return DiskSampler(photon_pos_start, b, bh.disk_outer, bh.disk_inner, rotation_axis, bh, w);
+                }
+
+                dphi             = dphi + Integrate(bh.disk_inner, r3, b, w) - Integrate(r3, bh.disk_inner, b, w);
+                photon_pos_start = glm::rotate(cam_position, -dphi, rotation_axis);
+                dphi_in_disk     = Integrate(bh.disk_inner, bh.disk_outer, b, w);
+                dphi             = dphi - dphi_in_disk;
+                photon_pos_end = glm::rotate(cam_position, -dphi, rotation_axis);
+                if (std::abs(dphi_in_disk) > pi<double>() || photon_pos_start[1] * photon_pos_end[1] < 0)
+                {
+                    *bloom = true;
+                    return DiskSampler(photon_pos_start, b, bh.disk_inner, bh.disk_outer, rotation_axis, bh, w);
+                }
+
+                dphi = dphi - Integrate(bh.disk_outer, integrate_end, b, w);
+                glm::dvec3 distort_coord = glm::rotate(cam_position, -dphi, rotation_axis);
+
+                return SkyboxSampler(distort_coord, skybox);
             }
             else
             {
                 double dphi_in_disk       = Integrate(bh.disk_outer, r3, b, w);
-                double old_dphi           = dphi;
                 dphi                      = dphi + dphi_in_disk;
                 glm::dvec3 photon_pos_end = glm::rotate(cam_position, -dphi, rotation_axis);
 
-                // Debug
-                /*          if (tex_coord[1] > -0.35 || tex_coord[1] < -0.45 || tex_coord[0] < -0.22 || tex_coord[0] >
-                   0.22)
-                          {
-
-
-                              return glm::dvec3(1, 1, 0);
-                          }
-                          else
-                          {
-
-                              std::cout << dphi_in_disk << "\n";
-                          }*/
-
-                //////
-
                 if (std::abs(dphi_in_disk) > pi<double>() || photon_pos_start[1] * photon_pos_end[1] < 0)
                 {
-                    // Debug
-                    // return glm::dvec3(0, 0, 0);
+                    *bloom = true;
                     return DiskSampler(photon_pos_start, b, bh.disk_outer, r3, rotation_axis, bh, w);
                 }
                 photon_pos_start = photon_pos_end;
@@ -449,8 +457,7 @@ inline glm::dvec3 Trace(glm::dvec3 tex_coord, const Blackhole& bh, glm::dvec3 ca
                 photon_pos_end   = glm::rotate(cam_position, -dphi, rotation_axis);
                 if (std::abs(dphi_in_disk) > pi<double>() || photon_pos_start[1] * photon_pos_end[1] < 0)
                 {
-                    // Debug
-                    // return glm::dvec3(0, 0, 1);
+                    *bloom = true;
                     return DiskSampler(photon_pos_start, b, r3, bh.disk_outer, rotation_axis, bh, w);
                 }
 
