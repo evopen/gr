@@ -235,7 +235,7 @@ double ode45(double x0, double x1, double h, double b)
 
 inline void LoadSkybox(std::filesystem::path dir, Skybox& skybox)
 {
-    skybox.front  = cv::imread((dir / "top.jpg").string());
+    skybox.front  = cv::imread((dir / "front.jpg").string());
     skybox.back   = cv::imread((dir / "back.jpg").string());
     skybox.top    = cv::imread((dir / "top.jpg").string());
     skybox.bottom = cv::imread((dir / "bottom.jpg").string());
@@ -285,8 +285,8 @@ inline glm::dvec3 SkyboxSampler(const glm::dvec3& tex_coord, const Skybox& skybo
     // delete index that I don't need
     temp_vector.erase(temp_vector.begin() + max_abs_index);
 
-    glm::dvec2 coord_2d(std::min(1.0, std::max(0.0, (tex_coord[0] * scale + 1) / 2)),
-        std::min(1.0, std::max(0.0, (tex_coord[1] * scale + 1) / 2)));
+    glm::dvec2 coord_2d(std::min(1.0, std::max(0.0, (temp_vector[0] * scale + 1) / 2)),
+        std::min(1.0, std::max(0.0, (temp_vector[1] * scale + 1) / 2)));
 
     if (coord_2d.x > 1 || coord_2d.y > 1 || coord_2d.x < 0 || coord_2d.y < 0)
         throw std::runtime_error("2d coord out of range 0 to 1");
