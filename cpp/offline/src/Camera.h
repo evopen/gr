@@ -6,11 +6,11 @@
 namespace dhh::camera
 {
     // Default camera values
-    const float kYaw         = -60.0f;
-    const float kPitch       = -10.0f;
-    const float kSpeed       = 10.f;
+    const float kYaw         = -90.0f;
+    const float kPitch       = 0.0f;
+    const float kSpeed       = 1.f;
     const float kSensitivity = 0.1f;
-    const float kZoom        = 45.0f;
+    const float kZoom        = 45.f;
 
     enum CameraMovement
     {
@@ -48,10 +48,11 @@ namespace dhh::camera
             float yaw = kYaw, float pitch = kPitch)
             : front(glm::vec3(0.0f, 0.0f, -1.0f)), movement_speed(kSpeed), mouse_sensitivity(kSensitivity), zoom(kZoom)
         {
-            position = position;
-            world_up  = up;
-            yaw      = yaw;
-            pitch    = pitch;
+            this->position = position;
+            this->up       = up;
+            this->yaw      = yaw;
+            this->pitch    = pitch;
+            world_up       = glm::vec3(0, 1, 0);
             UpdateCameraVectors();
         }
 
@@ -59,10 +60,12 @@ namespace dhh::camera
         Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch)
             : front(glm::vec3(0.0f, 0.0f, -1.0f)), movement_speed(kSpeed), mouse_sensitivity(kSensitivity), zoom(kZoom)
         {
-            position = glm::vec3(posX, posY, posZ);
-            world_up  = glm::vec3(upX, upY, upZ);
-            yaw      = yaw;
-            pitch    = pitch;
+            this->position = glm::vec3(posX, posY, posZ);
+            this->up       = glm::vec3(upX, upY, upZ);
+            this->yaw      = yaw;
+            this->pitch    = pitch;
+            world_up       = glm::vec3(0, 1, 0);
+
             UpdateCameraVectors();
         }
 
@@ -131,7 +134,7 @@ namespace dhh::camera
             front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
             front.y = sin(glm::radians(pitch));
             front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-            front   = glm::normalize(front);
+            this->front   = glm::normalize(front);
             // Also re-calculate the Right and Up vector
             right = glm::normalize(glm::cross(front, world_up));
             // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results
@@ -139,4 +142,22 @@ namespace dhh::camera
             up = glm::normalize(glm::cross(right, front));
         }
     };
+
+    glm::dvec3 GetTexCoord(int row, int col, int width, int height, Camera cam)
+    {
+        glm::dvec3 tex_coord;
+
+        double center_x = double(width) / 2;
+        double center_y = double(height) / 2;
+        double bend_x   = (double(col) - center_x) / center_x * glm::radians(cam.zoom / 2);
+        double bend_y   = -(double(row) - center_y) / center_y * glm::radians(cam.zoom / 2);
+
+        double up_length    = glm::length(cam.front) * tan(bend_y);
+        double right_length = glm::length(cam.front) * tan(bend_x);
+        tex_coord           = cam.front + glm::normalize(cam.up) * float(up_length);
+        tex_coord           = glm::vec3(tex_coord) + glm::normalize(cam.right) * float(right_length);
+        
+
+        return tex_coord;
+    }
 }

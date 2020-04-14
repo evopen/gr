@@ -1,3 +1,4 @@
+#include "Camera.h"
 #include "library.h"
 #include "pch.h"
 
@@ -15,6 +16,7 @@ uint8_t* img;
 
 Skybox skybox;
 Camera cam;
+dhh::camera::Camera camera(glm::vec3(3, 2, 20));
 Blackhole bh;
 std::mt19937 rng;
 std::uniform_real_distribution<double> uni(-0.001, 0.001);
@@ -35,7 +37,7 @@ void Worker(int idx)
             std::cout << double(row) / kHeight << std::endl;
         for (int col = 0; col < kWidth; ++col)
         {
-            glm::dvec3 tex_coord = GetTexCoord(row, col, kWidth, kHeight);
+            glm::dvec3 tex_coord = dhh::camera::GetTexCoord(row, col, kWidth, kHeight, camera);
             glm::dvec3 color(0, 0, 0);
             for (int sample = 0; sample < kSamples; sample++)
             {
@@ -60,8 +62,6 @@ int main(int argc, char** argv)
     try
     {
         LoadSkybox("resource/starfield", skybox);
-        cam.position  = glm::dvec3(3, 2, 11);
-        cam.front     = glm::dvec3(0, 0, -1);
         bh.disk_inner = 2;
         bh.disk_outer = 10;
         bh.position   = glm::dvec3(0, 0, 0);
@@ -90,9 +90,14 @@ int main(int argc, char** argv)
             }
 
             if (!kVideo)
+            {
                 stbi_write_png("raytraced.png", kWidth, kHeight, STBI_rgb, img, kWidth * 3);
+            }
             movie.addFrame(img);
-            cam.position += glm::dvec3(-0.01, -0.01, -0.01);
+            /* camera.ProcessMove(dhh::camera::CameraMovement::kForward, 0.05);
+             camera.ProcessMove(dhh::camera::CameraMovement::kDown, 0.05);
+             camera.ProcessMove(dhh::camera::CameraMovement::kLeft, 0.05);*/
+            camera.ProcessMouseMovement(2, 0);
         }
 
         auto end = std::chrono::high_resolution_clock::now();

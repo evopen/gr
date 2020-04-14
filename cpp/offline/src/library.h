@@ -366,14 +366,14 @@ glm::vec3 rotate(glm::vec3 position, float angle, glm::vec3 axis)
     return glm::vec3(RotationMatrix(axis, angle) * glm::vec4(position, 0.f));
 }
 
-inline glm::dvec3 Trace(
+inline glm::dvec3 Trace(glm::dvec3 tex_coord, const Blackhole& bh, glm::dvec3 cam_position, const Skybox& skybox,
     glm::dvec3 tex_coord, const Blackhole& bh, const Camera& cam, const Skybox& skybox, gsl_integration_workspace* w)
 {
-    glm::dvec3 bh_dir        = bh.position - cam.position;
+    glm::dvec3 bh_dir        = bh.position - cam_position;
     glm::dvec3 rotation_axis = glm::normalize(glm::cross(tex_coord, bh_dir));
     double cos_theta         = GetCosAngle(tex_coord, bh_dir);
     double theta             = std::acos(cos_theta);
-    double r0                = glm::length(cam.position);
+    double r0                = glm::length(cam_position);
     double b                 = CalculateImpactParameter(theta, r0);
     double integrate_end     = 2000;
     if (b < std::sqrt(27))
@@ -382,10 +382,10 @@ inline glm::dvec3 Trace(
         // return glm::dvec3(1, 1, 1);
 
         double dphi                 = std::fmod(Integrate(r0, bh.disk_outer, b, w), 2 * pi<double>());  /// here
-        glm::dvec3 photon_pos_start = glm::rotate(cam.position, -dphi, rotation_axis);
+        glm::dvec3 photon_pos_start = glm::rotate(cam_position, -dphi, rotation_axis);
         double dphi_in_disk         = Integrate(bh.disk_outer, bh.disk_inner, b, w);
         dphi                        = std::fmod(dphi + dphi_in_disk, pi<double>() * 2);
-        glm::dvec3 photon_pos_end   = glm::rotate(cam.position, -dphi, rotation_axis);
+        glm::dvec3 photon_pos_end   = glm::rotate(cam_position, -dphi, rotation_axis);
 
         if (std::abs(dphi_in_disk) > pi<double>() || photon_pos_start[1] * photon_pos_end[1] < 0)
         {
@@ -403,13 +403,13 @@ inline glm::dvec3 Trace(
 
             double dphi = std::fmod(Integrate(r0, r3, b, w) - Integrate(r3, integrate_end, b, w), pi<double>() * 2);
 
-            glm::dvec3 distort_coord = glm::rotate(cam.position, -dphi, rotation_axis);
+            glm::dvec3 distort_coord = glm::rotate(cam_position, -dphi, rotation_axis);
             return SkyboxSampler(distort_coord, skybox);
         }
         else
         {
             double dphi                 = std::fmod(Integrate(r0, bh.disk_outer, b, w), 2 * pi<double>());
-            glm::dvec3 photon_pos_start = glm::rotate(cam.position, -dphi, rotation_axis);
+            glm::dvec3 photon_pos_start = glm::rotate(cam_position, -dphi, rotation_axis);
 
             if (r3 < bh.disk_inner)  // TODO:later
             {
@@ -419,7 +419,7 @@ inline glm::dvec3 Trace(
                 double dphi_in_disk       = Integrate(bh.disk_outer, r3, b, w);
                 double old_dphi           = dphi;
                 dphi                      = dphi + dphi_in_disk;
-                glm::dvec3 photon_pos_end = glm::rotate(cam.position, -dphi, rotation_axis);
+                glm::dvec3 photon_pos_end = glm::rotate(cam_position, -dphi, rotation_axis);
 
                 // Debug
                 /*          if (tex_coord[1] > -0.35 || tex_coord[1] < -0.45 || tex_coord[0] < -0.22 || tex_coord[0] >
@@ -446,7 +446,7 @@ inline glm::dvec3 Trace(
                 photon_pos_start = photon_pos_end;
                 dphi_in_disk     = Integrate(r3, bh.disk_outer, b, w);
                 dphi             = std::fmod(dphi - dphi_in_disk, pi<double>() * 2);
-                photon_pos_end   = glm::rotate(cam.position, -dphi, rotation_axis);
+                photon_pos_end   = glm::rotate(cam_position, -dphi, rotation_axis);
                 if (std::abs(dphi_in_disk) > pi<double>() || photon_pos_start[1] * photon_pos_end[1] < 0)
                 {
                     // Debug
@@ -456,7 +456,7 @@ inline glm::dvec3 Trace(
 
                 // not hit
                 dphi = std::fmod(dphi - Integrate(bh.disk_outer, integrate_end, b, w), pi<double>() * 2);
-                glm::dvec3 distort_coord = glm::rotate(cam.position, -dphi, rotation_axis);
+                glm::dvec3 distort_coord = glm::rotate(cam_position, -dphi, rotation_axis);
 
                 return SkyboxSampler(distort_coord, skybox);
             }
