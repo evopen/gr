@@ -10,7 +10,7 @@ namespace dhh::camera
     const float kPitch       = 0.0f;
     const float kSpeed       = 1.f;
     const float kSensitivity = 0.1f;
-    const float kZoom        = 60.f;
+    const float kZoom        = 45.f;
 
     enum CameraMovement
     {

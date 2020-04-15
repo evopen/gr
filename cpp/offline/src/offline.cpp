@@ -16,18 +16,21 @@ uint8_t* img;
 uint8_t* bloom_buffer;
 
 Skybox skybox;
-Camera cam;
-dhh::camera::Camera camera(glm::vec3(0, 2, 30));
+// dhh::camera::Camera camera(glm::vec3(18, 1, 16));
+dhh::camera::Camera camera(glm::vec3(2, 4, 35));
 Blackhole bh;
 std::mt19937 rng;
 std::uniform_real_distribution<double> uni(-0.001, 0.001);
 
+std::vector<glm::vec3> positions;
+std::vector<glm::vec3> fronts;
+std::vector<glm::vec3> ups;
 
-const int kSamples = 4;
+const int kSamples = 1;
 
-const bool kVideo = false;
+const bool kVideo = true;
 
-int frames = 100;
+int frames = 20 * 25;
 
 void Worker(int idx)
 {
@@ -103,6 +106,56 @@ void bloom(uint8_t* img, uint8_t* bloom_buffer)
     }
 }
 
+void GenerateMovement()
+{
+    glm::vec3 pos    = camera.position;
+    glm::vec3 up     = camera.up;
+    glm::vec3 front  = camera.front;
+    glm::vec3 bh_dir = glm::vec3(bh.position) - camera.position;
+
+    glm::vec3 mid_point_1(16, 1, 10);
+    float duration     = 8 * 25;
+    glm::vec3 velocity = (mid_point_1 - pos) / duration;
+
+    for (int i = 0; i < duration; ++i)
+    {
+        pos += velocity;
+        bh_dir = glm::vec3(0.3, 0.4, 0.5) - pos;
+
+        positions.emplace_back(pos);
+        fronts.emplace_back(bh_dir);
+        ups.emplace_back(up);
+    }
+
+    glm::vec3 mid_point_2(20, 15, -30);
+    duration = 4 * 25;
+    velocity = (mid_point_2 - pos) / duration;
+
+    for (int i = 0; i < duration; ++i)
+    {
+        pos += velocity;
+        bh_dir = glm::vec3(0.3, -0.4, 0.5) - pos;
+
+        positions.emplace_back(pos);
+        fronts.emplace_back(bh_dir);
+        ups.emplace_back(up);
+    }
+
+    glm::vec3 mid_point_3(30, -30, 60);
+    duration = 8 * 25;
+    velocity = (mid_point_3 - pos) / duration;
+
+    for (int i = 0; i < duration; ++i)
+    {
+        pos += velocity;
+        bh_dir = glm::vec3(0.3, -0.4, 0.5) - pos;
+
+        positions.emplace_back(pos);
+        fronts.emplace_back(bh_dir);
+        ups.emplace_back(up);
+    }
+}
+
 int main(int argc, char** argv)
 {
     if (!kVideo)
@@ -110,8 +163,12 @@ int main(int argc, char** argv)
         frames = 1;
     }
 
+    GenerateMovement();
+
     try
     {
+        camera.front = glm::vec3(0.1, 0.2, 0.3) - camera.position;
+        camera.right = glm::normalize(glm::cross(camera.up, camera.front));
         LoadSkybox("resource/starfield", skybox);
         bh.disk_inner = 8;
         bh.disk_outer = 18;
@@ -141,7 +198,7 @@ int main(int argc, char** argv)
                 // std::cout << "Thread " << i << " has finished.\n";
             }
 
-            //bloom(img, bloom_buffer);
+            // bloom(img, bloom_buffer);
 
 
             if (!kVideo)
@@ -150,10 +207,11 @@ int main(int argc, char** argv)
             }
 
             movie.addFrame(img);
-            /* camera.ProcessMove(dhh::camera::CameraMovement::kForward, 0.05);
-             camera.ProcessMove(dhh::camera::CameraMovement::kDown, 0.05);
-             camera.ProcessMove(dhh::camera::CameraMovement::kLeft, 0.05);*/
-            camera.ProcessMouseMovement(2, 0);
+
+            camera.position = positions[frame];
+            camera.front    = fronts[frame];
+            camera.up       = ups[frame];
+            camera.right    = glm::normalize(glm::cross(camera.up, camera.front));
         }
 
         auto end = std::chrono::high_resolution_clock::now();

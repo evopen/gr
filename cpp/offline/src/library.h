@@ -28,11 +28,14 @@ struct Camera
 
 inline void GenerateDiskTexture(Blackhole& bh)
 {
-    int disk_resolution = 20;
+    std::mt19937 rng;
+    std::uniform_real_distribution<double> uni(0.6, 1);
+
+    int disk_resolution = 100;
     bh.disk_texture.resize(disk_resolution);
     for (int i = 0; i < bh.disk_texture.size(); ++i)
     {
-        bh.disk_texture[i] = {0.8, float(i) / disk_resolution, 0};
+        bh.disk_texture[i] = {0.8, uni(rng)*float(i) / disk_resolution, 0};
     }
 }
 
@@ -428,14 +431,14 @@ inline glm::dvec3 Trace(glm::dvec3 tex_coord, const Blackhole& bh, glm::dvec3 ca
                 photon_pos_start = glm::rotate(cam_position, -dphi, rotation_axis);
                 dphi_in_disk     = Integrate(bh.disk_inner, bh.disk_outer, b, w);
                 dphi             = dphi - dphi_in_disk;
-                photon_pos_end = glm::rotate(cam_position, -dphi, rotation_axis);
+                photon_pos_end   = glm::rotate(cam_position, -dphi, rotation_axis);
                 if (std::abs(dphi_in_disk) > pi<double>() || photon_pos_start[1] * photon_pos_end[1] < 0)
                 {
                     *bloom = true;
                     return DiskSampler(photon_pos_start, b, bh.disk_inner, bh.disk_outer, rotation_axis, bh, w);
                 }
 
-                dphi = dphi - Integrate(bh.disk_outer, integrate_end, b, w);
+                dphi                     = dphi - Integrate(bh.disk_outer, integrate_end, b, w);
                 glm::dvec3 distort_coord = glm::rotate(cam_position, -dphi, rotation_axis);
 
                 return SkyboxSampler(distort_coord, skybox);
