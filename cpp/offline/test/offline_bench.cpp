@@ -1,4 +1,5 @@
 #include "library.h"
+#include "../../rkf45/rkf45.h"
 
 #include <benchmark/benchmark.h>
 #include <boost/math/tools/roots.hpp>
@@ -51,7 +52,7 @@ static void BM_integrate(benchmark::State& state)
     gsl_integration_workspace* w = gsl_integration_workspace_alloc(1000);
     for (auto _ : state)
     {
-        Integrate(30, 20, 10, w);
+        Integrate(200, 20, 10, w);
     }
 }
 
@@ -61,16 +62,53 @@ static void BM_ode23(benchmark::State& state)
 {
     for (auto _ : state)
     {
-        ode23(200, 10, 1, 10);
+        ode23(200, 20, 1, 10);
     }
 }
 
 
-static void BM_ode45(benchmark::State& state)
+static void BM_rkf45(benchmark::State& state)
 {
     for (auto _ : state)
     {
-        ode45(30, 20, 0.001, 10);
+        rkf45(200, 20, 1, 10);
+    }
+}
+
+void geo(double r, double y[], double yp[])
+{
+    double b = 10;
+    yp[0]    = 1 / (r * r * sqrt(1 / (b * b) - 1 / (r * r) + 2 / (r * r * r)));
+
+    return;
+}
+
+double rkf45_integrate(double start, double end)
+{
+    double abserr = 1e-5;
+    int flag;
+    double relerr = 1e-5;
+    double t;
+    double t_out;
+    double y[1];
+    double yp[1];
+
+    flag = 1;
+
+    y[0] = 0.0;
+
+    t = start;
+    t_out = end;
+
+    r8_rkf45(geo, 1, y, yp, &t, t_out, &relerr, abserr, flag);
+    return y[0];
+}
+
+static void BM_r8_rkf45(benchmark::State& state)
+{
+    for (auto _ : state)
+    {
+        rkf45_integrate(2000, 20);
     }
 }
 
@@ -80,5 +118,7 @@ BENCHMARK(BM_bisection);
 BENCHMARK(BM_bracket_and_solve_root);
 BENCHMARK(BM_integrate);
 BENCHMARK(BM_ode23);
+BENCHMARK(BM_rkf45);
+BENCHMARK(BM_r8_rkf45);
 
 BENCHMARK_MAIN();

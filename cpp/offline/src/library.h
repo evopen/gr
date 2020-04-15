@@ -35,7 +35,7 @@ inline void GenerateDiskTexture(Blackhole& bh)
     bh.disk_texture.resize(disk_resolution);
     for (int i = 0; i < bh.disk_texture.size(); ++i)
     {
-        bh.disk_texture[i] = {0.8, uni(rng)*float(i) / disk_resolution, 0};
+        bh.disk_texture[i] = {0.8, uni(rng) * float(i) / disk_resolution, 0};
     }
 }
 
@@ -154,6 +154,7 @@ double ode23(double x0, double x1, double h, double b)
     double tolerance = 1e-7;
     double y         = 0;
     bool negative    = false;
+    int count        = 0;
     if (x0 > x1)
     {
         std::swap(x0, x1);
@@ -161,56 +162,7 @@ double ode23(double x0, double x1, double h, double b)
     }
     while (x0 < x1)
     {
-        double k1 = Geodesic(x0, b);
-        double k2 = Geodesic(x0 + h / 2, b);
-        double k3 = Geodesic(x0 + h * 0.75, b);
-
-        double x_next = x0 + h;
-        double y_next = y + (2 * k1 + 3 * k2 + 4 * k3) / 9 * h;
-
-        double k4    = Geodesic(x0 + h, b);
-        double error = std::abs(-5 * k1 + 6 * k2 + 8 * k3 - 9 * k4) / 72 * h;
-
-        double what = pow(error, 1 / 3);
-
-        double s;
-
-        if (error > tolerance * 5)
-        {
-            s = pow(error, 0.2);
-        }
-        else
-        {
-            s = 5.0;
-        }
-
-        h = h * s;
-        if (error > tolerance)
-        {
-            continue;
-        }
-        else
-        {
-            y  = y_next;
-            x0 = x_next;
-        }
-    }
-
-    return negative ? -y : y;
-}
-
-double ode45(double x0, double x1, double h, double b)
-{
-    double tolerance = 1e-7;
-    double y         = 0;
-    bool negative    = false;
-    if (x0 > x1)
-    {
-        std::swap(x0, x1);
-        negative = true;
-    }
-    while (x0 < x1)
-    {
+        count++;
         double k1 = Geodesic(x0, b);
         double k2 = Geodesic(x0 + h / 2, b);
         double k3 = Geodesic(x0 + h * 0.75, b);
@@ -222,6 +174,7 @@ double ode45(double x0, double x1, double h, double b)
         double error = std::abs(-5 * k1 + 6 * k2 + 8 * k3 - 9 * k4) / 72 * h;
 
         h = h * std::min(std::max(std::sqrt(tolerance / (2 * error)), 0.3), 2.0);
+
         if (error > tolerance)
         {
             continue;
@@ -232,6 +185,55 @@ double ode45(double x0, double x1, double h, double b)
             x0 = x_next;
         }
     }
+    //std::cout << count << "\n";
+
+    return negative ? -y : y;
+}
+
+double rkf45(double x0, double x1, double h, double b)
+{
+    double tolerance = 1e-7;
+    double y         = 0;
+    bool negative    = false;
+    int count        = 0;
+    if (x0 > x1)
+    {
+        std::swap(x0, x1);
+        negative = true;
+    }
+    while (x0 < x1)
+    {
+        count++;
+        double k1 = Geodesic(x0, b);
+        double k2 = Geodesic(x0 + (1.0 / 4) * h, b);
+        double k3 = Geodesic(x0 + (3.0 / 8) * h, b);
+        double k4 = Geodesic(x0 + (12.0 / 13) * h, b);
+        double k5 = Geodesic(x0 + (1.0) * h, b);
+        double k6 = Geodesic(x0 + (1.0 / 2) * h, b);
+
+        double x_next = x0 + h;
+        double y_next = y + ((25.0 / 216) * k1 + (1408.0 / 2565) * k3 + (2197.0 / 4101) * k4 - (1.0 / 5) * k5) * h;
+        double z_next =
+            y
+            + ((16.0 / 135) * k1 + (6656.0 / 12825) * k3 + (28561.0 / 56430) * k4 - (9.0 / 50) * k5 + (2.0 / 55) * k6)
+                  * h;
+
+        double error = std::abs(z_next - y_next);
+        //double s     = 0.9 / std::pow(error, 0.2);
+
+        h = h * std::min(std::max(tolerance / (2 * error), 0.3), 2.0);
+        if (error > tolerance)
+        {
+            continue;
+        }
+        else
+        {
+            y  = y_next;
+            x0 = x_next;
+        }
+    }
+
+    //std::cout << count << "\n";
 
     return negative ? -y : y;
 }

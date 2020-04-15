@@ -15,7 +15,7 @@ target_link_libraries(${TEST_TARGET} PRIVATE glm)
 find_package(OpenCV CONFIG REQUIRED)
 target_link_libraries(${TEST_TARGET} PRIVATE ${OpenCV_LIBS})
 
-add_executable(${BENCH_TARGET} "offline_bench.cpp")
+add_executable(${BENCH_TARGET} "offline_bench.cpp" "../src/library.h" "../../rkf45/rkf45.cpp")
 
 find_package(benchmark CONFIG REQUIRED)
 target_link_libraries(${BENCH_TARGET} PRIVATE benchmark::benchmark benchmark::benchmark_main)

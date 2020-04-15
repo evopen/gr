@@ -1,43 +1,41 @@
+#include "library.h"
+
 #include <iostream>
-#include <omp.h>
-using namespace std;
-
-double f(double t, double y)
-{
-}
-
-// Bogacki-Shampine method
-void integrate(double& t, double& y, double& h)
-{
-    double k1, k2, k3, k4, y1, y2;
-    // f(t, y) is our derivative
-    k1 = f(t, y);
-    k2 = f(t + h * 0.50, y + h * 0.50 * k1);
-    k3 = f(t + h * 0.75, y + h * 0.75 * k2);  // 3rd order accurate solution
-    y1 = y + h * (2.0 / 9.0 * k1 + 1.0 / 3.0 * k2 + 4.0 / 9.0 * k3);
-    k4 = f(t + h, y1);  // 2nd order accurate solution
-    y2 = y + h1 * (7.0 / 24.0 * k1 + 1.0 / 4.0 * k2 + 1.0 / 3.0 * k3 + 1.0 / 8.0 * k4);
-    y  = y2;
-    t += h;  // Define atol (absolute tolerance) and rtol (relative tolerance) somewhere
-             // We use the difference between the two solutions as an approximation of the error, scaled by our desired
-             // absolute and relative tolerance Both atol and rtol should be non-zero.
-    double scale = atol + std::max(fabs(y1), fabs(y2)) * rtol;
-    double error = max(fabs(y2 - y1), 2E-10) / scale;
-    h            = h * pow(error, -1.0 / 3.0);
-}
 
 int main()
 {
-#if _OPENMP
-    cout << " support openmp " << endl;
-#else
-    cout << " not support openmp" << endl;
-#endif
-
-#pragma omp parallel for num_threads(4)  // NEW ADD
-    for (int i = 0; i < 10; i++)
+    try
     {
-        cout << i << endl;
+        std::mt19937 rng;
+        std::uniform_real_distribution<double> uni(-0.001, 0.001);
+        gsl_integration_workspace* w = gsl_integration_workspace_alloc(1000);
+
+        auto start = std::chrono::high_resolution_clock::now();
+        for (int i = 0; i < 1000; i++)
+        {
+            Integrate(200 + uni(rng) + i, 20, 10);
+        }
+        auto end = std::chrono::high_resolution_clock::now();
+        std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
+
+        start = std::chrono::high_resolution_clock::now();
+        for (int i = 0; i < 1000; i++)
+        {
+            ode23(200 + uni(rng) + i, 20, 1, 10);
+        }
+        end = std::chrono::high_resolution_clock::now();
+        std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
+
+        start = std::chrono::high_resolution_clock::now();
+        for (int i = 0; i < 1000; i++)
+        {
+            rkf45(200 + uni(rng) + i, 20, 1, 10);
+        }
+        end = std::chrono::high_resolution_clock::now();
+        std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
     }
-    return 0;
+    catch (std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
 }

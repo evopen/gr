@@ -58,3 +58,4 @@ link_libraries(${AVDEVICE_LIBRARY}
 # Include sub-projects.
 add_subdirectory ("offline")
 add_subdirectory ("gpu-offscreen")
+add_subdirectory ("rkf45")
