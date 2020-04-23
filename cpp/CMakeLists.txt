@@ -24,10 +24,18 @@ link_libraries(GSL::gsl GSL::gslcblas)
 find_package(unofficial-cairo CONFIG REQUIRED)
 link_libraries(unofficial::cairo::cairo unofficial::cairo::cairo-gobject)
 
-set(LLVM_DIRECTORY "C:/Users/DHH/scoop/apps/llvm/10.0.0")
+find_package(cxxopts CONFIG REQUIRED)
+link_libraries(cxxopts::cxxopts)
+
+find_package(absl CONFIG REQUIRED)
+link_libraries(absl::any absl::base absl::bits absl::city)
+
+find_package(CUDA REQUIRED)
+
+set(LLVM_DIRECTORY "C:/Users/DHH/scoop/apps/llvm/9.0.1")
 
 set(OpenMP_LIBRARY_DIR "${LLVM_DIRECTORY}/lib")
-set(OpenMP_CXX_FLAGS "-Xclang -fopenmp")
+set(OpenMP_CXX_FLAGS "-Xclang -fopenmp -mavx2 -Xclang -fcxx-exceptions")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
@@ -57,5 +65,8 @@ link_libraries(${AVDEVICE_LIBRARY}
 
 # Include sub-projects.
 add_subdirectory ("offline")
-add_subdirectory ("gpu-offscreen")
+#add_subdirectory ("gpu-offscreen")
 add_subdirectory ("rkf45")
+
+add_subdirectory("qt")
+add_subdirectory("wxwidgets")

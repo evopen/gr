@@ -1,6 +1,8 @@
 #include "Camera.h"
 #include "library.h"
 #include "pch.h"
+#include <cxxopts.hpp>
+
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -9,8 +11,8 @@
 
 const int kTotalThreads = 16;
 
-const int kWidth  = 4 * 256;
-const int kHeight = 4 * 256;
+const int kWidth  = 4 * 1024;
+const int kHeight = 4 * 1024;
 
 uint8_t* img;
 uint8_t* bloom_buffer;
@@ -26,9 +28,9 @@ std::vector<glm::vec3> positions;
 std::vector<glm::vec3> fronts;
 std::vector<glm::vec3> ups;
 
-const int kSamples = 1;
+const int kSamples = 16;
 
-const bool kVideo = true;
+const bool kVideo = false;
 
 int frames = 20 * 25;
 

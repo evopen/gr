@@ -16,3 +16,7 @@ TestResults/
 
 *.spv
 *.png
+
+# clion
+cmake-build-debug
+.idea

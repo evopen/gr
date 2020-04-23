@@ -8,6 +8,7 @@ target_precompile_headers(${MAIN_TARGET} PRIVATE pch.h)
 add_executable(playground "playground.cpp" "writer.cpp")
 #target_precompile_headers(playground PRIVATE pch.h)
 
+
 add_custom_command(
     TARGET playground 
     POST_BUILD

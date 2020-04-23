@@ -90,7 +90,6 @@ TEST(LibraryTest, DiskSamplerT)
     gsl_integration_workspace* w = gsl_integration_workspace_alloc(1000);
 
     color = DiskSampler(glm::dvec3(0, 3, 4), 6, 10, 5, glm::dvec3(3, 4, 5), bh, w);
-
     try
     {
 
