@@ -16,8 +16,8 @@
 
 #include <chrono>
 
-const int32_t kWidth  = 128;
-const int32_t kHeight = 128;
+const int32_t kWidth  = 512;
+const int32_t kHeight = 512;
 
 class RayTracer : public VulkanBase
 {

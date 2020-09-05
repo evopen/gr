@@ -185,7 +185,7 @@ double ode23(double x0, double x1, double h, double b)
             x0 = x_next;
         }
     }
-    //std::cout << count << "\n";
+    // std::cout << count << "\n";
 
     return negative ? -y : y;
 }
@@ -219,7 +219,7 @@ double rkf45(double x0, double x1, double h, double b)
                   * h;
 
         double error = std::abs(z_next - y_next);
-        //double s     = 0.9 / std::pow(error, 0.2);
+        // double s     = 0.9 / std::pow(error, 0.2);
 
         h = h * std::min(std::max(tolerance / (2 * error), 0.3), 2.0);
         if (error > tolerance)
@@ -233,7 +233,7 @@ double rkf45(double x0, double x1, double h, double b)
         }
     }
 
-    //std::cout << count << "\n";
+    // std::cout << count << "\n";
 
     return negative ? -y : y;
 }

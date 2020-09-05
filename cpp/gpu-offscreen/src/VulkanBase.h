@@ -84,6 +84,7 @@ public:
     dhh::camera::Camera camera;
 
 
+
 public:
     explicit VulkanBase(bool enableValidation) : enable_validation(enableValidation) {}
 

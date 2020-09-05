@@ -1,7 +1,6 @@
 #include "Camera.h"
 #include "library.h"
 #include "pch.h"
-#include <cxxopts.hpp>
 
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -11,15 +10,15 @@
 
 const int kTotalThreads = 16;
 
-const int kWidth  = 4 * 1024;
-const int kHeight = 4 * 1024;
+const int kWidth  = 4 * 64;
+const int kHeight = 4 * 64;
 
 uint8_t* img;
 uint8_t* bloom_buffer;
 
 Skybox skybox;
 // dhh::camera::Camera camera(glm::vec3(18, 1, 16));
-dhh::camera::Camera camera(glm::vec3(2, 4, 35));
+dhh::camera::Camera camera(glm::vec3(0, 1, 12));
 Blackhole bh;
 std::mt19937 rng;
 std::uniform_real_distribution<double> uni(-0.001, 0.001);
